@@ -27,7 +27,6 @@
     .review { background: rgba(255,255,255,0.05); padding: 1.2rem; border-radius: 1rem; margin: 1.5rem 0; backdrop-filter: blur(8px); }
     .scroll-arrow { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); font-size: 3.5rem; color: #a855f7; animation: bounce 2s infinite; cursor: pointer; z-index: 100; }
     @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); } 40% { transform: translateX(-50%) translateY(-20px); } 60% { transform: translateX(-50%) translateY(-10px); } }
-    .notify { position: fixed; top: 1rem; right: 1rem; padding: 1.2rem 2rem; border-radius: 1rem; z-index: 10000; backdrop-filter: blur(12px); font-weight: bold; }
   </style>
 </head>
 <body>
@@ -171,7 +170,7 @@
         if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`;
 
         if (dl) {
-          console.log('Открываем:', dl);
+          console.log('Открываем deep-link:', dl);
           window.location.href = dl;
           setTimeout(() => {
             alert('Подтверди подключение и транзакцию в кошельке');
